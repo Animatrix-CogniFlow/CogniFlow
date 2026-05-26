@@ -16,6 +16,17 @@ CogniFlow utilizes a decoupled, high-performance architecture built on lightweig
 *   **AI Engine:** Driven by the **Gemini API**, structured around custom system routing instructions to enforce Socratic methodologies rather than raw text summarization.
 
 ---
+## 🎨 UI/UX System Architecture & Design Tokens
+
+To ensure consistency between design components and frontend code modules, our complete interface architecture and user flows are mapped out in Figma.
+
+> 🛠️ **Design Workspace:** [Access the CogniFlow Figma Architecture Canvas](https://vivid-crisp-58059936.figma.site/)
+
+### System Design Framework:
+* **Design Tokens:** Pre-defined spacing, typography scale, and color palettes optimized for dark/light mode readability for tertiary and secondary study states.
+* **Component Architecture:** Atomic design principles separating low-level primitives (Buttons, Input Fields) from complex interactive modules (Socratic Chat Interface, Document Dashboard).
+* **Motion Framework:** Blueprint animations for **Framer Motion** state transitions (e.g., card expansion during drill checks, slide-in menus) mapped directly in Figma's prototyping canvas.
+
 
 ## 🏗️ System Architecture & Data Flow
 
