@@ -1,0 +1,13 @@
+{
+  "name": "cogniflow",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "web:dev": "npm run dev --workspace=apps/web",
+    "web:build": "npm run build --workspace=apps/web",
+    "api:dev": "cd apps/api && venv/bin/uvicorn main:app --reload"
+  }
+}
