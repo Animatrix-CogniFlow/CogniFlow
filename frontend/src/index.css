@@ -1,0 +1,195 @@
+@import "tailwindcss";
+
+/* ============================================================
+   CogniFlow Design System — Revised Palette
+   Light: off-white (#ECECEC base) + silver-grey + gold accents
+   Dark:  deep navy-black + blue shades
+   ============================================================ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", Georgia, serif;
+
+  /* Gold accent scale */
+  --color-gold-50:  #fdf9ec;
+  --color-gold-100: #f9eecc;
+  --color-gold-200: #f1d98a;
+  --color-gold-300: #e8c55a;
+  --color-gold-400: #d4a827;
+  --color-gold-500: #b8900f;
+  --color-gold-600: #9a760a;
+  --color-gold-700: #7c5e08;
+  --color-gold-800: #604808;
+  --color-gold-900: #4a3806;
+
+  /* Silver-grey scale */
+  --color-silver-50:  #f8f8f8;
+  --color-silver-100: #ececec;
+  --color-silver-200: #d4d4d4;
+  --color-silver-300: #b8b8b8;
+  --color-silver-400: #9a9a9a;
+  --color-silver-500: #7e7e7e;
+  --color-silver-600: #636363;
+  --color-silver-700: #4a4a4a;
+  --color-silver-800: #333333;
+  --color-silver-900: #1e1e1e;
+
+  /* Deep blue / dark-mode scale */
+  --color-abyss-950: #060912;
+  --color-abyss-900: #0b0f1e;
+  --color-abyss-850: #101628;
+  --color-abyss-800: #161e35;
+  --color-abyss-700: #1e2a4a;
+  --color-abyss-600: #28375e;
+
+  /* Blue accent scale for dark mode */
+  --color-cobalt-50:  #e8f0ff;
+  --color-cobalt-100: #ccdcff;
+  --color-cobalt-200: #99baff;
+  --color-cobalt-300: #6696ff;
+  --color-cobalt-400: #3d74ff;
+  --color-cobalt-500: #1a55f5;
+  --color-cobalt-600: #1240d4;
+  --color-cobalt-700: #0e30ab;
+  --color-cobalt-800: #0b2487;
+  --color-cobalt-900: #081a63;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background-color: #ececec;
+  color: #1e1e1e;
+}
+
+html.dark body {
+  background-color: #060912;
+  color: #dde4f5;
+}
+
+::selection {
+  background-color: color-mix(in srgb, var(--color-gold-400) 30%, transparent);
+}
+
+html.dark ::selection {
+  background-color: color-mix(in srgb, var(--color-cobalt-400) 35%, transparent);
+}
+
+/* Custom scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(180, 160, 100, 0.35) transparent;
+}
+html.dark * {
+  scrollbar-color: rgba(60, 100, 200, 0.35) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(180, 160, 100, 0.35);
+  border-radius: 999px;
+}
+html.dark *::-webkit-scrollbar-thumb {
+  background: rgba(60, 100, 200, 0.35);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-gold-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+html.dark :focus-visible {
+  outline-color: var(--color-cobalt-400);
+}
+
+/* Animations */
+@keyframes cf-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+@keyframes cf-pulse-ring {
+  0%   { transform: scale(0.85); opacity: 0.6; }
+  100% { transform: scale(1.6);  opacity: 0; }
+}
+@keyframes cf-shimmer {
+  100% { transform: translateX(100%); }
+}
+@keyframes cf-spin-slow {
+  to { transform: rotate(360deg); }
+}
+@keyframes cf-shimmer-text {
+  to { background-position: 200% center; }
+}
+
+.cf-float     { animation: cf-float 6s ease-in-out infinite; }
+.cf-spin-slow { animation: cf-spin-slow 28s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Grid background — light */
+.cf-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(100, 90, 60, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(100, 90, 60, 0.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+/* Grid background — dark */
+html.dark .cf-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(60, 100, 220, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(60, 100, 220, 0.06) 1px, transparent 1px);
+}
+/* Mobile GPU compositing fix */
+.cf-grid-bg {
+  transform: translateZ(0);
+  will-change: transform;
+  background-image:
+    linear-gradient(to right, rgba(100, 90, 60, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(100, 90, 60, 0.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+html.dark .cf-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(60, 100, 220, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(60, 100, 220, 0.06) 1px, transparent 1px);
+}
+
+/* Also fix backdrop-blur on mobile */
+@supports (-webkit-overflow-scrolling: touch) {
+  .backdrop-blur-xl,
+  .backdrop-blur {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+}
