@@ -4,7 +4,7 @@ An intelligent, AI-powered edtech platform engineered to eliminate the "illusion
 
 Developed under the **Animatrix** Organization.
 
----
+----
 
 ## 💻 Core Technology Stack
 
