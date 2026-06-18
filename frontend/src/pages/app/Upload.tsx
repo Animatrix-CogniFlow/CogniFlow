@@ -19,12 +19,14 @@ import { Badge } from "../../components/ui/Badge";
 import { Input } from "../../components/ui/Input";
 import { contentService, type UploadResult } from "../../services/contentService";
 import { formatBytes, cn } from "../../lib/utils";
+import { useChatStore } from "../../stores/useChatStore";
 
 const PIPELINE = ["Uploading", "Parse document", "Extract concepts", "Generate study material"];
 
 export default function Upload() {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
+  const selectDocument = useChatStore((s) => s.selectDocument);
 
   // Clean, focused state
   const [dragging, setDragging] = useState(false);
@@ -261,10 +263,22 @@ export default function Upload() {
                   </div>
                   
                   <div className="mt-6 flex flex-wrap gap-3 border-t border-emerald-500/20 pt-6">
-                    <Button onClick={() => navigate(`/app/visual-lab/${result.document_id}`)} className="bg-emerald-600 hover:bg-emerald-500 text-white border-none">
+                    <Button 
+                      onClick={() => {
+                        selectDocument(result.document_id);
+                        navigate("/app/lab");
+                      }} 
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white border-none"
+                    >
                       <Video className="h-4 w-4 mr-2" /> Enter Visual Lab
                     </Button>
-                    <Button variant="secondary" onClick={() => navigate(`/app/study/${result.document_id}`)}>
+                    <Button 
+                      variant="secondary" 
+                      onClick={() => {
+                        selectDocument(result.document_id);
+                        navigate("/app/study");
+                      }}
+                    >
                       <ArrowRight className="h-4 w-4 mr-2" /> Continue to Dashboard
                     </Button>
                   </div>

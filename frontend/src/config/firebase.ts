@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // This pulls your secret keys from the .env file we made earlier
 const firebaseConfig = {
@@ -18,3 +19,4 @@ const app = initializeApp(firebaseConfig);
 // Initialize and export the specific tools we need
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);

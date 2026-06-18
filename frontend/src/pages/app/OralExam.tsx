@@ -16,9 +16,7 @@ import type {
   OralQuestion,
 } from "../../services/aiService";
 import { contentService } from "../../services/contentService";
-import type { DocumentOption } from "../../stores/useChatStore";
-import { uid, cn } from "../../lib/utils";
-import type { TranscriptEntry } from "../../lib/types";
+import { useChatStore } from "../../stores/useChatStore";
 
 // ── Stage machine ────────────────────────────────────────────
 type Stage =
@@ -31,9 +29,12 @@ type Stage =
 
 export default function OralExam() {
   // ── Document selection ──
-  const [documents, setDocuments] = useState<DocumentOption[]>([]);
-  const [docsLoading, setDocsLoading] = useState(false);
-  const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+  const documents = useChatStore((s) => s.documents);
+  const selectedDocId = useChatStore((s) => s.selectedDocumentId);
+  const selectDocument = useChatStore((s) => s.selectDocument);
+  const docsLoading = useChatStore((s) => s.documentsLoading);
+  const loadDocuments = useChatStore((s) => s.loadDocuments);
+  
   const [docDropOpen, setDocDropOpen] = useState(false);
   const docDropRef = useRef<HTMLDivElement>(null);
 
@@ -54,16 +55,8 @@ export default function OralExam() {
 
   // ── Load documents on mount ──
   useEffect(() => {
-    setDocsLoading(true);
-    contentService
-      .fetchDocuments()
-      .then((docs) => {
-        setDocuments(docs);
-        if (docs.length > 0) setSelectedDocId(docs[0].id);
-      })
-      .catch(() => setError("Could not load documents."))
-      .finally(() => setDocsLoading(false));
-  }, []);
+    loadDocuments();
+  }, [loadDocuments]);
 
   // Close doc dropdown on outside click
   useEffect(() => {
@@ -262,7 +255,7 @@ export default function OralExam() {
                         <button
                           key={doc.id}
                           onClick={() => {
-                            setSelectedDocId(doc.id);
+                            selectDocument(doc.id);
                             setDocDropOpen(false);
                           }}
                           className={cn(

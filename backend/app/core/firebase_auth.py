@@ -13,7 +13,10 @@ if not firebase_admin._apps:
         "client_email": settings.FIREBASE_CLIENT_EMAIL,
         "token_uri": "https://oauth2.googleapis.com/token",
     })
-    firebase_admin.initialize_app(cred)
+    bucket_name = settings.FIREBASE_STORAGE_BUCKET or f"{settings.FIREBASE_PROJECT_ID}.firebasestorage.app"
+    firebase_admin.initialize_app(cred, {
+        "storageBucket": bucket_name
+    })
 
 def get_firestore_client():
     """Returns a Firestore client using Firebase Admin credentials."""

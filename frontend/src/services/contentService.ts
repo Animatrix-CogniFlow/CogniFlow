@@ -83,31 +83,79 @@ export const contentService = {
     languageCode = "en",
     persona = "university"
   ): AsyncGenerator<UploadProgressEvent, UploadResult, unknown> {
+    const { getAuth } = await import("firebase/auth");
+    const { ref, uploadBytesResumable, getDownloadURL } = await import("firebase/storage");
+    const { storage } = await import("../config/firebase");
+
+    const user = getAuth().currentUser;
+    if (!user) throw new Error("Not authenticated");
+
     const token = await getIdToken();
+    const storagePath = `users/${user.uid}/documents/${Date.now()}_${file.name}`;
+    const storageRef = ref(storage, storagePath);
 
-    yield { stage: "Uploading", progress: 5 };
+    yield { stage: "Uploading to storage", progress: 0 };
 
-    const form = new FormData();
-    form.append("file", file);
+    const uploadTask = uploadBytesResumable(storageRef, file);
 
+    // Promise wrapper to wait for storage upload and track progress
+    const uploadPromise = new Promise<string>((resolve, reject) => {
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 20);
+          // Yield progress from 0% to 20% for storage upload
+          // Since we are inside a promise and can't yield directly to generator, we handle it
+        },
+        (err) => reject(err),
+        async () => {
+          try {
+            const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(downloadUrl);
+          } catch (e) {
+            reject(e);
+          }
+        }
+      );
+    });
+
+    // Run custom loop to simulate progress while waiting for storage upload
+    let uploadPct = 0;
+    const interval = setInterval(() => {
+      if (uploadPct < 20) {
+        uploadPct += 2;
+        // Generators can yield but from this outer scope
+      }
+    }, 150);
+
+    try {
+      await uploadPromise;
+    } finally {
+      clearInterval(interval);
+    }
+
+    yield { stage: "Uploading to storage", progress: 20 };
+
+    // Send storage path and metadata to backend
     const fetchPromise = fetch(
       `${API}/api/ingest/upload?language_code=${languageCode}&persona=${persona}`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          storage_path: storagePath,
+          filename: file.name,
+        }),
       }
     );
-
-    for (let p = 10; p <= 20; p += 5) {
-      await new Promise((r) => setTimeout(r, 300));
-      yield { stage: "Uploading", progress: p };
-    }
 
     const res = await fetchPromise;
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(err.detail ?? "Upload failed");
+      throw new Error(err.detail ?? "Upload processing failed");
     }
 
     const stages: { stage: string; from: number; to: number }[] = [
@@ -120,7 +168,7 @@ export const contentService = {
 
     for (const s of stages) {
       for (let p = s.from; p <= s.to; p += 4) {
-        await new Promise((r) => setTimeout(r, 120));
+        await new Promise((r) => setTimeout(r, 100));
         yield { stage: s.stage, progress: Math.min(p, s.to) };
       }
     }
