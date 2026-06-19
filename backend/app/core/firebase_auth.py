@@ -6,14 +6,18 @@ from app.core.config import settings
 
 # Initialise Firebase Admin once
 if not firebase_admin._apps:
+    project_id = settings.FIREBASE_PROJECT_ID.strip('"\'')
+    private_key = settings.FIREBASE_PRIVATE_KEY.strip('"\'').replace("\\n", "\n")
+    client_email = settings.FIREBASE_CLIENT_EMAIL.strip('"\'')
+    
     cred = credentials.Certificate({
         "type": "service_account",
-        "project_id": settings.FIREBASE_PROJECT_ID,
-        "private_key": settings.FIREBASE_PRIVATE_KEY.replace("\\n", "\n"),
-        "client_email": settings.FIREBASE_CLIENT_EMAIL,
+        "project_id": project_id,
+        "private_key": private_key,
+        "client_email": client_email,
         "token_uri": "https://oauth2.googleapis.com/token",
     })
-    bucket_name = settings.FIREBASE_STORAGE_BUCKET or f"{settings.FIREBASE_PROJECT_ID}.firebasestorage.app"
+    bucket_name = settings.FIREBASE_STORAGE_BUCKET.strip('"\'') or f"{project_id}.firebasestorage.app"
     firebase_admin.initialize_app(cred, {
         "storageBucket": bucket_name
     })
@@ -34,4 +38,3 @@ def get_current_user(token: HTTPAuthorizationCredentials = Depends(bearer_scheme
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token"
         )
- 

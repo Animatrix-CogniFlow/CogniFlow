@@ -8,14 +8,14 @@ env_path = Path(__file__).resolve().parent.parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
 class Settings(BaseSettings):
-    GEMINI_API_KEY: str
-    GROQ_API_KEY: str
-    OPENAI_API_KEY: str
-    HUGGINGFACE_API_KEY: str
-    HF_TOKEN: str
-    FIREBASE_PROJECT_ID: str
-    FIREBASE_PRIVATE_KEY: str
-    FIREBASE_CLIENT_EMAIL: str
+    GEMINI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
+    HUGGINGFACE_API_KEY: str = ""
+    HF_TOKEN: str = ""
+    FIREBASE_PROJECT_ID: str = ""
+    FIREBASE_PRIVATE_KEY: str = ""
+    FIREBASE_CLIENT_EMAIL: str = ""
     FIREBASE_STORAGE_BUCKET: str = ""
 
 settings = Settings()
