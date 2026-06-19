@@ -24,6 +24,7 @@ import { Button } from "../../components/ui/Button";
 import { Badge } from "../../components/ui/Badge";
 import { AmbientBackground } from "../../components/visuals/AmbientBackground";
 import { aiService, type Scene, type SceneScript, type AnimationResponse } from "../../services/aiService";
+import { contentService } from "../../services/contentService";
 import { useChatStore } from "../../stores/useChatStore";
 import { cn } from "../../lib/utils";
 
@@ -38,8 +39,13 @@ export default function VisualLab() {
 
   // Concept & Animation State
   const [concepts, setConcepts] = useState<any[]>([]);
-  const [conceptsLoading, setConceptsLoading] = useState(false);
   const [selectedConcept, setSelectedConcept] = useState<string | null>(null);
+
+  // Topics / Chapters Outline State
+  const [topics, setTopics] = useState<any[]>([]);
+  const [topicsLoading, setTopicsLoading] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [topicLoading, setTopicLoading] = useState<string | null>(null);
   
   const [animationScript, setAnimationScript] = useState<SceneScript | null>(null);
   const [animationId, setAnimationId] = useState<string | null>(null);
@@ -64,30 +70,65 @@ export default function VisualLab() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Fetch concepts when selectedDocId changes
+  // Fetch topics and existing concepts when selectedDocId changes
   useEffect(() => {
     if (selectedDocId) {
-      setConceptsLoading(true);
+      setTopicsLoading(true);
       setError(null);
       setSelectedConcept(null);
+      setSelectedTopic(null);
       setAnimationScript(null);
       setAnimationId(null);
       setIsPlaying(false);
+      setConcepts([]);
       
-      aiService.getConcepts(selectedDocId)
-        .then((res) => {
-          setConcepts(res.concepts || []);
+      contentService.getDocument(selectedDocId)
+        .then((doc) => {
+          setTopics(doc.topics || []);
+          setConcepts(doc.key_concepts || []);
         })
         .catch(() => {
-          setError("Failed to fetch concepts for this document.");
+          setError("Failed to fetch topics for this document.");
         })
         .finally(() => {
-          setConceptsLoading(false);
+          setTopicsLoading(false);
         });
     } else {
+      setTopics([]);
       setConcepts([]);
     }
   }, [selectedDocId]);
+
+  // Handle selecting/opening a topic and fetching its concepts lazily
+  async function handleSelectTopic(topicName: string) {
+    if (selectedTopic === topicName) {
+      setSelectedTopic(null);
+      return;
+    }
+    setSelectedTopic(topicName);
+
+    // Check if concepts are already fetched for this topic
+    const hasConcepts = concepts.some(
+      (c) => c.extracted_for_topic?.toLowerCase() === topicName.toLowerCase()
+    );
+    if (hasConcepts) return;
+
+    setTopicLoading(topicName);
+    setError(null);
+    try {
+      const res = await contentService.lazyFetchConcepts(selectedDocId!, topicName);
+      setConcepts((prev) => {
+        const withoutNew = prev.filter(
+          (c) => c.extracted_for_topic?.toLowerCase() !== topicName.toLowerCase()
+        );
+        return [...withoutNew, ...res.concepts];
+      });
+    } catch (err: any) {
+      setError(err.message || `Failed to extract concepts for ${topicName}`);
+    } finally {
+      setTopicLoading(null);
+    }
+  }
 
   // Handle playing introductory overview animation
   async function playIntroOverview() {
@@ -306,44 +347,83 @@ export default function VisualLab() {
             <Card className="max-h-[500px] overflow-y-auto">
               <CardBody className="p-4">
                 <h3 className="font-semibold text-sm tracking-wider uppercase text-silver-500 border-b border-silver-200 dark:border-white/10 pb-3 mb-3">
-                  Concept Mapping ({concepts.length})
+                  Topics Outline ({topics.length})
                 </h3>
                 
-                {conceptsLoading ? (
+                {topicsLoading ? (
                   <div className="py-10 text-center flex flex-col items-center gap-2">
                     <Loader2 className="h-6 w-6 animate-spin text-gold-500" />
-                    <span className="text-xs text-silver-500">Extracting nodes...</span>
+                    <span className="text-xs text-silver-500">Loading outline...</span>
                   </div>
                 ) : (
-                  <div className="space-y-1">
-                    {concepts.map((c, i) => (
-                      <button
-                        key={i}
-                        onClick={() => playConceptAnimation(c.concept)}
-                        disabled={generating}
-                        className={cn(
-                          "w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all flex items-start gap-2.5 border border-transparent",
-                          selectedConcept === c.concept
-                            ? "bg-gold-500/10 border-gold-500/30 text-gold-700 dark:text-white"
-                            : "hover:bg-silver-100 dark:hover:bg-white/5 text-silver-600 dark:text-silver-400"
-                        )}
-                      >
-                        <Play className="h-3.5 w-3.5 mt-0.5 shrink-0 text-silver-400" />
-                        <div className="min-w-0">
-                          <p className="font-medium truncate">{c.concept}</p>
-                          <span className={cn(
-                            "inline-block text-[10px] uppercase font-bold tracking-wider mt-1 px-2 py-0.5 rounded-full",
-                            c.complexity === "advanced" 
-                              ? "bg-rose-500/10 text-rose-500"
-                              : c.complexity === "intermediate"
-                              ? "bg-gold-500/10 text-gold-600"
-                              : "bg-emerald-500/10 text-emerald-600"
-                          )}>
-                            {c.complexity}
-                          </span>
+                  <div className="space-y-2">
+                    {topics.map((t, idx) => {
+                      const isExpanded = selectedTopic === t.topic_name;
+                      const isLoading = topicLoading === t.topic_name;
+                      const topicConcepts = concepts.filter(
+                        (c) => c.extracted_for_topic?.toLowerCase() === t.topic_name.toLowerCase()
+                      );
+
+                      return (
+                        <div key={idx} className="border border-silver-100 dark:border-white/5 rounded-xl overflow-hidden bg-silver-50/50 dark:bg-white/[0.01]">
+                          <button
+                            onClick={() => handleSelectTopic(t.topic_name)}
+                            className={cn(
+                              "w-full text-left px-3 py-3 text-sm font-medium transition-all flex items-center justify-between gap-2.5",
+                              isExpanded ? "text-gold-500 bg-gold-500/5" : "text-silver-900 dark:text-silver-300 hover:bg-silver-100 dark:hover:bg-white/5"
+                            )}
+                          >
+                            <div className="min-w-0">
+                              <p className="font-semibold truncate">{t.topic_name}</p>
+                              <p className="text-[10px] text-silver-500 truncate mt-0.5">{t.brief_description}</p>
+                            </div>
+                            <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform text-silver-400", isExpanded && "rotate-180")} />
+                          </button>
+
+                          {isExpanded && (
+                            <div className="p-2 border-t border-silver-100 dark:border-white/5 space-y-1 bg-white dark:bg-abyss-900/50">
+                              {isLoading ? (
+                                <div className="py-4 text-center flex flex-col items-center gap-1.5">
+                                  <Loader2 className="h-4 w-4 animate-spin text-gold-500" />
+                                  <span className="text-[10px] text-silver-500">Extracting key concepts...</span>
+                                </div>
+                              ) : topicConcepts.length > 0 ? (
+                                topicConcepts.map((c, i) => (
+                                  <button
+                                    key={i}
+                                    onClick={() => playConceptAnimation(c.concept)}
+                                    disabled={generating}
+                                    className={cn(
+                                      "w-full text-left px-2.5 py-2 rounded-lg text-xs transition-all flex items-start gap-2 border border-transparent",
+                                      selectedConcept === c.concept
+                                        ? "bg-gold-500/10 border-gold-500/30 text-gold-700 dark:text-white font-medium"
+                                        : "hover:bg-silver-100 dark:hover:bg-white/5 text-silver-600 dark:text-silver-400"
+                                    )}
+                                  >
+                                    <Play className="h-3 w-3 mt-0.5 shrink-0 text-silver-400" />
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-medium truncate">{c.concept}</p>
+                                      <span className={cn(
+                                        "inline-block text-[9px] uppercase font-bold tracking-wider mt-0.5 px-1.5 py-0.2 rounded-full",
+                                        c.complexity === "advanced" 
+                                          ? "bg-rose-500/10 text-rose-500"
+                                          : c.complexity === "intermediate"
+                                          ? "bg-gold-500/10 text-gold-600"
+                                          : "bg-emerald-500/10 text-emerald-600"
+                                      )}>
+                                        {c.complexity}
+                                      </span>
+                                    </div>
+                                  </button>
+                                ))
+                              ) : (
+                                <p className="text-center text-[10px] text-silver-500 py-2">No concepts found for this topic.</p>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardBody>

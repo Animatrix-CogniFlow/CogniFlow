@@ -51,7 +51,6 @@ async def upload_document(
         )
 
     file_b64 = base64.b64encode(file_bytes).decode("utf-8")
-
     extracted = await extract_content_from_pdf(file_b64, payload.filename, language_code, persona)
 
     doc_ref = db.collection("documents").document()
@@ -62,7 +61,8 @@ async def upload_document(
         "title": extracted.get("title", payload.filename),
         "subject": extracted.get("subject", ""),
         "summary": extracted.get("summary", ""),
-        "key_concepts": extracted.get("key_concepts", []),
+        "topics": extracted.get("topics", []),
+        "key_concepts": [],
         "raw_text": extracted.get("raw_text", ""),
         "file_size_mb": round(len(file_bytes) / (1024 * 1024), 1),
         "created_at": datetime.datetime.utcnow().isoformat()
@@ -73,8 +73,7 @@ async def upload_document(
         "title": extracted.get("title"),
         "subject": extracted.get("subject"),
         "summary": extracted.get("summary"),
-        "total_concepts": len(extracted.get("key_concepts", [])),
-        "key_concepts": extracted.get("key_concepts"),
+        "topics": extracted.get("topics", []),
         "language_code": language_code,
         "persona": persona,
         "file_size_mb": round(len(file_bytes) / (1024 * 1024), 1),

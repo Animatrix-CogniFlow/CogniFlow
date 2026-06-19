@@ -9,7 +9,7 @@ import KidsDashboard from "./personas/KidsDashboard";
 import SecondaryDashboard from "./personas/SecondaryDashboard";
 import CasualDashboard from "./personas/CasualDashboard";
 
-const API = import.meta.env.VITE_API_URL as string;
+const API = (import.meta.env.VITE_API_URL as string) || "";
 
 export default function AdaptiveDashboard() {
   const [persona, setPersona] = useState<string | null>(null);

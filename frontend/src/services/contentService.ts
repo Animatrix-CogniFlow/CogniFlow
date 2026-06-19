@@ -219,4 +219,22 @@ export const contentService = {
     const params = new URLSearchParams({ q: query, top_k: String(topK) });
     return apiFetch(`/api/search/concepts/${documentId}?${params}`, { method: "GET" });
   },
+
+  async lazyFetchConcepts(documentId: string, topicName: string, languageCode = "en", persona = "university") {
+    return apiFetch<{ concepts: any[] }>(
+      `/api/ingest/topics/extract-concepts?language_code=${languageCode}&persona=${persona}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ document_id: documentId, topic_name: topicName }),
+      }
+    );
+  },
+
+  async getDocument(documentId: string) {
+    const { getFirestore, doc, getDoc } = await import("firebase/firestore");
+    const db = getFirestore();
+    const snap = await getDoc(doc(db, "documents", documentId));
+    if (!snap.exists()) throw new Error("Document not found");
+    return { id: snap.id, ...snap.data() } as any;
+  },
 };

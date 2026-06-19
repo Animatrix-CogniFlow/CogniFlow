@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import ingest, flashcards, quiz, animation, tutor, oral_exam, search, profile
+from app.routes import ingest, flashcards, quiz, animation, tutor, oral_exam, search, profile, topics
 from app.agents.language_agent import get_all_languages
 from app.agents.persona_agent import get_all_personas
 
@@ -19,6 +19,7 @@ app.add_middleware(
 )
 
 app.include_router(ingest.router,     prefix="/api/ingest",     tags=["Ingest"])
+app.include_router(topics.router,     prefix="/api/ingest/topics", tags=["Topics"])
 app.include_router(flashcards.router, prefix="/api/flashcards", tags=["Flashcards"])
 app.include_router(quiz.router,       prefix="/api/quiz",       tags=["Quiz"])
 app.include_router(animation.router,  prefix="/api/animation",  tags=["Animation"])

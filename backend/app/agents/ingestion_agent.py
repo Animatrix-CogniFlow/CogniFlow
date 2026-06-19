@@ -11,13 +11,6 @@ async def extract_content_from_pdf(file_b64: str, filename: str, output_language
     language_instruction = get_language_instruction(output_language_code)
     persona_instruction = get_persona_instruction(persona)
 
-    pdf_part = {
-        "inline_data": {
-            "mime_type": "application/pdf",
-            "data": file_b64
-        }
-    }
-
     prompt = f"""
     You are an intelligent study assistant. Analyze this PDF document thoroughly.
     {language_instruction}
@@ -28,30 +21,19 @@ async def extract_content_from_pdf(file_b64: str, filename: str, output_language
         "title": "detected title of the document",
         "subject": "subject area e.g. Biology, History, Mathematics",
         "summary": "a clear 3-5 sentence overview of the entire document written for this persona",
-        "key_concepts": [
+        "topics": [
             {{
-                "concept": "name of the concept",
-                "explanation": "explanation written in the tone and style appropriate for this persona",
-                "complexity": "basic | intermediate | advanced",
-                "subtopics": [
-                    "specific subtopic or detail within this concept",
-                    "another subtopic"
-                ],
-                "why_it_matters": "one sentence on why this concept is important, written for this persona"
+                "topic_name": "name of a specific key chapter, section, or topic in the document",
+                "brief_description": "a 1-sentence description of what this topic covers"
             }}
         ],
-        "raw_text": "the full extracted text from the document in its original language"
+        "raw_text": "the full extracted text from the document in its original language (first 5000 characters limit)"
     }}
 
     Rules:
-    - Break the document into the smallest meaningful individual concepts
-    - Do not group large chapters as one concept — split them into specific ideas
-    - A 50 page textbook should yield 20-60 concepts depending on content density
-    - Each concept must be self contained and explainable on its own
-    - complexity must reflect how difficult the concept is to understand
-    - subtopics are the specific details, mechanisms, or steps within that concept
-    - Translate title, subject, summary and key_concepts into the requested language
-    - Keep raw_text in the original language of the document
+    - Break the document down into 5 to 15 main topics/chapters.
+    - Each topic should be specific enough to be studied individually.
+    - Translate title, subject, summary and topics list into the requested language.
     - Return only valid JSON. No extra text.
     """
 
@@ -66,3 +48,51 @@ async def extract_content_from_pdf(file_b64: str, filename: str, output_language
     raw = response.text.strip()
     raw = re.sub(r"^```json|^```|```$", "", raw, flags=re.MULTILINE).strip()
     return json.loads(raw)
+
+
+async def extract_concepts_for_topic(file_b64: str, filename: str, topic_name: str, output_language_code: str = "en", persona: str = "university") -> list:
+    language_instruction = get_language_instruction(output_language_code)
+    persona_instruction = get_persona_instruction(persona)
+
+    prompt = f"""
+    You are an intelligent study assistant. Analyze this PDF document and focus ONLY on the topic: "{topic_name}".
+    {language_instruction}
+    {persona_instruction}
+
+    Extract and detail all key concepts related to "{topic_name}" from this document.
+    Return this exact JSON structure containing a list of concepts:
+    {{
+        "key_concepts": [
+            {{
+                "concept": "name of the concept",
+                "explanation": "explanation written in the tone and style appropriate for this persona",
+                "complexity": "basic | intermediate | advanced",
+                "subtopics": [
+                    "specific subtopic or detail within this concept",
+                    "another subtopic"
+                ],
+                "why_it_matters": "one sentence on why this concept is important, written for this persona"
+            }}
+        ]
+    }}
+
+    Rules:
+    - Only extract concepts that directly pertain to "{topic_name}".
+    - Break "{topic_name}" into detailed, self-contained key concepts.
+    - complexity must reflect how difficult the concept is to understand.
+    - Translate all concept details into the requested language.
+    - Return only valid JSON. No extra text.
+    """
+
+    response = client.models.generate_content(
+        model="gemini-1.5-flash",
+        contents=[
+            types.Part.from_bytes(data=base64.b64decode(file_b64), mime_type="application/pdf"),
+            types.Part.from_text(text=prompt)
+        ]
+    )
+
+    raw = response.text.strip()
+    raw = re.sub(r"^```json|^```|```$", "", raw, flags=re.MULTILINE).strip()
+    data = json.loads(raw)
+    return data.get("key_concepts", [])
