@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Atom, 
-  Maximize2, 
-  Sigma, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Atom,
+  Maximize2,
+  Sigma,
   ArrowRight,
   Sparkles,
   Play,
@@ -46,13 +46,13 @@ export default function VisualLab() {
   const [topicsLoading, setTopicsLoading] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [topicLoading, setTopicLoading] = useState<string | null>(null);
-  
+
   const [animationScript, setAnimationScript] = useState<SceneScript | null>(null);
   const [animationId, setAnimationId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [sceneIndex, setSceneIndex] = useState(0);
-  
+
   // Feedback / Simplification state
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
@@ -81,7 +81,7 @@ export default function VisualLab() {
       setAnimationId(null);
       setIsPlaying(false);
       setConcepts([]);
-      
+
       contentService.getDocument(selectedDocId)
         .then((doc) => {
           setTopics(doc.topics || []);
@@ -137,7 +137,7 @@ export default function VisualLab() {
     setError(null);
     setAnimationScript(null);
     setIsPlaying(false);
-    
+
     try {
       const res = await aiService.generateIntroAnimation(selectedDocId);
       setAnimationScript(res.scene_script);
@@ -160,7 +160,7 @@ export default function VisualLab() {
     setAnimationScript(null);
     setIsPlaying(false);
     setRegenAttempt(1);
-    
+
     try {
       const res = await aiService.generateConceptAnimation(selectedDocId, conceptName);
       setAnimationScript(res.scene_script);
@@ -177,7 +177,7 @@ export default function VisualLab() {
   // Handle animation satisfaction
   async function handleUnderstand(satisfied: boolean) {
     if (!animationId) return;
-    
+
     if (satisfied) {
       try {
         await aiService.evaluateAnimation(animationId, true);
@@ -198,11 +198,11 @@ export default function VisualLab() {
     if (!animationId) return;
     setSubmittingFeedback(true);
     setError(null);
-    
+
     try {
       // Send optional feedback and trigger evaluation
       const evalRes = await aiService.evaluateAnimation(animationId, false, feedbackText);
-      
+
       if (evalRes.action === "tutor") {
         alert("Maximum explanation attempts reached. We'll redirect you to our interactive AI Tutor for personalized guidance.");
         setShowFeedbackModal(false);
@@ -236,7 +236,7 @@ export default function VisualLab() {
             Interactive STEM visualizations dynamically rendered on canvas.
           </p>
         </div>
-        
+
         {/* Document Selection Dropdown */}
         <div ref={docDropRef} className="relative">
           <button
@@ -319,7 +319,7 @@ export default function VisualLab() {
         </Card>
       ) : (
         <div className="grid gap-6 lg:grid-cols-4">
-          
+
           {/* Concepts Directory Sidebar */}
           <div className="lg:col-span-1 space-y-4">
             <Card>
@@ -327,10 +327,10 @@ export default function VisualLab() {
                 <div className="flex items-center justify-between border-b border-silver-200 dark:border-white/10 pb-3">
                   <h3 className="font-semibold text-sm tracking-wider uppercase text-silver-500">Document Hub</h3>
                 </div>
-                
-                <Button 
-                  onClick={playIntroOverview} 
-                  variant="outline" 
+
+                <Button
+                  onClick={playIntroOverview}
+                  variant="outline"
                   className="w-full flex items-center justify-start border-gold-500/30 text-gold-600 hover:bg-gold-500/5"
                   disabled={generating}
                 >
@@ -349,7 +349,7 @@ export default function VisualLab() {
                 <h3 className="font-semibold text-sm tracking-wider uppercase text-silver-500 border-b border-silver-200 dark:border-white/10 pb-3 mb-3">
                   Topics Outline ({topics.length})
                 </h3>
-                
+
                 {topicsLoading ? (
                   <div className="py-10 text-center flex flex-col items-center gap-2">
                     <Loader2 className="h-6 w-6 animate-spin text-gold-500" />
@@ -405,11 +405,11 @@ export default function VisualLab() {
                                       <p className="font-medium truncate">{c.concept}</p>
                                       <span className={cn(
                                         "inline-block text-[9px] uppercase font-bold tracking-wider mt-0.5 px-1.5 py-0.2 rounded-full",
-                                        c.complexity === "advanced" 
+                                        c.complexity === "advanced"
                                           ? "bg-rose-500/10 text-rose-500"
                                           : c.complexity === "intermediate"
-                                          ? "bg-gold-500/10 text-gold-600"
-                                          : "bg-emerald-500/10 text-emerald-600"
+                                            ? "bg-gold-500/10 text-gold-600"
+                                            : "bg-emerald-500/10 text-emerald-600"
                                       )}>
                                         {c.complexity}
                                       </span>
@@ -441,13 +441,13 @@ export default function VisualLab() {
               </div>
             ) : isPlaying && animationScript ? (
               <div className="space-y-4">
-                
+
                 {/* Canvas Container */}
                 <div className="relative overflow-hidden rounded-3xl border border-silver-300 bg-abyss-950 min-h-[500px] flex flex-col justify-between p-8 dark:border-abyss-700/60 shadow-2xl">
                   <AmbientBackground variant="hero" particles={false} />
                   <div className="absolute inset-0 cf-grid-bg opacity-30" />
                   <div className="absolute left-1/2 top-1/2 h-[450px] w-[450px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold-500/5 blur-[90px]" />
-                  
+
                   {/* Top Bar info inside Canvas */}
                   <div className="relative z-10 flex justify-between items-center text-white">
                     <Badge tone="flow" className="border-gold-500/30">
@@ -487,7 +487,7 @@ export default function VisualLab() {
                       <span className="text-xs text-silver-400 font-medium">
                         Scene {sceneIndex + 1} of {animationScript.total_scenes}
                       </span>
-                      
+
                       <div className="flex gap-1.5">
                         <Button
                           variant="secondary"
@@ -576,7 +576,7 @@ export default function VisualLab() {
               <p className="text-sm text-silver-500 mb-4">
                 Tell us what was confusing (e.g. "Explain the formula symbols" or "What does water split into?"). Gemini will adapt the animation with simpler analogies.
               </p>
-              
+
               <textarea
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
@@ -603,19 +603,19 @@ export default function VisualLab() {
 // ── Scene Renderer (Canvas Painter) ───────────────────────────────────
 
 function SceneRenderer({ scene }: { scene: Scene }) {
-  
+
   // Custom renders for different Scene types
   switch (scene.type) {
-    
+
     case "concept_intro":
       return (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
           className="text-center text-white px-6 max-w-xl"
         >
-          <motion.div 
+          <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
             className="inline-block p-4 rounded-full bg-gold-500/10 border border-gold-500/20 mb-6"
@@ -630,10 +630,10 @@ function SceneRenderer({ scene }: { scene: Scene }) {
           </p>
         </motion.div>
       );
-      
+
     case "definition":
       return (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}
@@ -650,7 +650,7 @@ function SceneRenderer({ scene }: { scene: Scene }) {
           </p>
         </motion.div>
       );
-      
+
     case "bullet_reveal":
       return (
         <div className="w-full max-w-lg text-white space-y-4 px-4">
@@ -677,7 +677,7 @@ function SceneRenderer({ scene }: { scene: Scene }) {
           </div>
         </div>
       );
-      
+
     case "flow_diagram":
       return (
         <div className="w-full max-w-2xl text-white px-4">
@@ -698,7 +698,7 @@ function SceneRenderer({ scene }: { scene: Scene }) {
                   <span className="text-xs font-mono font-bold text-gold-500 block mb-1">Step {idx + 1}</span>
                   <span className="text-sm font-semibold text-white block">{step}</span>
                 </motion.div>
-                
+
                 {idx < (scene.steps?.length ?? 0) - 1 && (
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -714,7 +714,7 @@ function SceneRenderer({ scene }: { scene: Scene }) {
           </div>
         </div>
       );
-      
+
     case "comparison":
       return (
         <div className="w-full max-w-2xl text-white px-4">
@@ -724,7 +724,7 @@ function SceneRenderer({ scene }: { scene: Scene }) {
             </h3>
           )}
           <div className="grid md:grid-cols-2 gap-6">
-            
+
             {/* Left side */}
             <motion.div
               initial={{ opacity: 0, x: -15 }}
@@ -766,7 +766,7 @@ function SceneRenderer({ scene }: { scene: Scene }) {
           </div>
         </div>
       );
-      
+
     case "equation":
       return (
         <div className="w-full max-w-lg text-white text-center px-4">
@@ -796,7 +796,7 @@ function SceneRenderer({ scene }: { scene: Scene }) {
           </div>
         </div>
       );
-      
+
     case "timeline":
       return (
         <div className="w-full max-w-xl text-white px-4">
@@ -822,7 +822,7 @@ function SceneRenderer({ scene }: { scene: Scene }) {
           </div>
         </div>
       );
-      
+
     case "summary":
       return (
         <motion.div
