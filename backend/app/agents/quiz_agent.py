@@ -71,7 +71,7 @@ async def generate_quiz(raw_text: str, subject: str, count: int = 10, difficulty
     """
 
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-2.5-flash",
         contents=prompt
     )
 

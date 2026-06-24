@@ -63,7 +63,7 @@ async def generate_flashcards(raw_text: str, subject: str, count: int = 10, mode
     """
 
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-2.5-flash",
         contents=prompt
     )
 

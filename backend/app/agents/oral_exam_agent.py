@@ -18,7 +18,7 @@ async def transcribe_audio(audio_bytes: bytes, filename: str, language_code: str
     """
     if should_use_gemini(language_code):
         response = gemini_client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             contents=[
                 types.Part.from_bytes(data=audio_bytes, mime_type="audio/webm"),
                 types.Part.from_text(text="Transcribe this audio exactly as spoken. Return only the transcribed text, nothing else.")
@@ -75,7 +75,7 @@ async def generate_oral_questions(raw_text: str, subject: str, count: int = 5, o
     """
 
     response = gemini_client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-2.5-flash",
         contents=prompt
     )
     raw = response.text.strip()
@@ -124,7 +124,7 @@ async def evaluate_oral_answer(
     """
 
     response = gemini_client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-2.5-flash",
         contents=prompt
     )
     raw = response.text.strip()

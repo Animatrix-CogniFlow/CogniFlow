@@ -56,7 +56,7 @@ async def chat_with_tutor(
         history_text += f"Student: {user_message}\nTutor:"
         full_prompt = f"{system_prompt}\n\nConversation:\n{history_text}"
         response = gemini_client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             contents=full_prompt
         )
         return response.text.strip()

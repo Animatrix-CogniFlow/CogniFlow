@@ -38,7 +38,7 @@ async def extract_content_from_pdf(file_b64: str, filename: str, output_language
     """
 
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-2.5-flash",
         contents=[
             types.Part.from_bytes(data=base64.b64decode(file_b64), mime_type="application/pdf"),
             types.Part.from_text(text=prompt)
@@ -85,7 +85,7 @@ async def extract_concepts_for_topic(file_b64: str, filename: str, topic_name: s
     """
 
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-2.5-flash",
         contents=[
             types.Part.from_bytes(data=base64.b64decode(file_b64), mime_type="application/pdf"),
             types.Part.from_text(text=prompt)

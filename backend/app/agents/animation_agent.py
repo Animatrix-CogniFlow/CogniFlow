@@ -86,7 +86,7 @@ async def generate_intro_animation(
     """
 
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-2.5-flash",
         contents=prompt
     )
     raw = response.text.strip()
@@ -224,7 +224,7 @@ async def generate_concept_animation(
     """
 
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-2.5-flash",
         contents=prompt
     )
     raw = response.text.strip()
@@ -366,7 +366,7 @@ async def regenerate_concept_animation(
     """
 
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-2.5-flash",
         contents=prompt
     )
     raw = response.text.strip()
