@@ -69,7 +69,7 @@ export default function KidsDashboard({ onChangePersona }: { onChangePersona: ()
               ))}
             </div>
           </div>
-          <p className="text-xs font-bold text-silver-500 text-center mt-4">Gain 50XP more to unlock the next space badge!</p>
+          <p className="text-xs font-bold text-silver-600 text-center mt-4">Gain 50XP more to unlock the next space badge!</p>
         </div>
 
       </div>

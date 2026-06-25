@@ -15,8 +15,8 @@ import type {
   OralExamResults,
   OralQuestion,
 } from "../../services/aiService";
-import { contentService } from "../../services/contentService";
 import { useChatStore } from "../../stores/useChatStore";
+import { cn } from "../../lib/utils";
 
 // ── Stage machine ────────────────────────────────────────────
 type Stage =
