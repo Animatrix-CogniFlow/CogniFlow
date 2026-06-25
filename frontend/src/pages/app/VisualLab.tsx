@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -29,6 +30,7 @@ import { useChatStore } from "../../stores/useChatStore";
 import { cn } from "../../lib/utils";
 
 export default function VisualLab() {
+  const navigate = useNavigate();
   const documents = useChatStore((s) => s.documents);
   const selectedDocId = useChatStore((s) => s.selectedDocumentId);
   const selectDocument = useChatStore((s) => s.selectDocument);
@@ -313,7 +315,7 @@ export default function VisualLab() {
             {documents.length > 0 ? (
               <Button onClick={() => setDocDropOpen(true)}>Choose from Decks</Button>
             ) : (
-              <Button onClick={() => selectDocument("")}>Upload a File</Button>
+              <Button onClick={() => navigate("/app/upload")}>Upload a File</Button>
             )}
           </CardBody>
         </Card>
@@ -494,7 +496,7 @@ export default function VisualLab() {
                           size="icon"
                           onClick={() => setSceneIndex(i => Math.max(0, i - 1))}
                           disabled={sceneIndex === 0}
-                          className="bg-white/5 border-white/10 hover:bg-white/10 h-8 w-8"
+                          className="bg-white/10 border border-white/20 hover:bg-white/20 text-white dark:text-white h-8 w-8"
                         >
                           <ChevronLeft className="h-4 w-4" />
                         </Button>
@@ -503,7 +505,7 @@ export default function VisualLab() {
                           size="icon"
                           onClick={() => setSceneIndex(i => Math.min(animationScript.scenes.length - 1, i + 1))}
                           disabled={sceneIndex === animationScript.scenes.length - 1}
-                          className="bg-white/5 border-white/10 hover:bg-white/10 h-8 w-8"
+                          className="bg-white/10 border border-white/20 hover:bg-white/20 text-white dark:text-white h-8 w-8"
                         >
                           <ChevronRight className="h-4 w-4" />
                         </Button>
@@ -531,7 +533,7 @@ export default function VisualLab() {
                       <Button onClick={() => handleUnderstand(true)} className="bg-emerald-600 hover:bg-emerald-500 text-white border-none px-6">
                         Yes, continue
                       </Button>
-                      <Button variant="secondary" onClick={() => handleUnderstand(false)} className="bg-white/5 hover:bg-white/10 border-white/10">
+                      <Button variant="secondary" onClick={() => handleUnderstand(false)} className="border border-silver-300 bg-silver-100 hover:bg-silver-200 text-silver-900 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:text-white px-6">
                         No, simplify it
                       </Button>
                     </div>

@@ -55,7 +55,7 @@ export const contentService = {
   // Fetches all documents the student has uploaded from Firestore
   async fetchDocuments(): Promise<DocumentOption[]> {
     const { getAuth } = await import("firebase/auth");
-    const { getFirestore, collection, query, where, getDocs, orderBy } =
+    const { getFirestore, collection, query, where, getDocs } =
       await import("firebase/firestore");
 
     const user = getAuth().currentUser;
@@ -64,16 +64,25 @@ export const contentService = {
     const db = getFirestore();
     const q = query(
       collection(db, "documents"),
-      where("user_id", "==", user.uid),
-      orderBy("created_at", "desc")
+      where("user_id", "==", user.uid)
     );
 
     const snap = await getDocs(q);
-    return snap.docs.map((doc) => ({
+    const docs = snap.docs.map((doc) => ({
       id: doc.id,
       title: doc.data().title ?? doc.data().filename,
       subject: doc.data().subject ?? "General",
+      createdAt: doc.data().created_at,
     }));
+
+    // Sort in-memory
+    docs.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    return docs;
   },
 
   // Uploads a PDF to the backend — Gemini extracts concepts and returns document_id
@@ -179,7 +188,7 @@ export const contentService = {
   // Fetches recent tutor sessions for dashboard display
   async fetchSessions() {
     const { getAuth } = await import("firebase/auth");
-    const { getFirestore, collection, query, where, getDocs, orderBy, limit } =
+    const { getFirestore, collection, query, where, getDocs } =
       await import("firebase/firestore");
 
     const user = getAuth().currentUser;
@@ -188,13 +197,11 @@ export const contentService = {
     const db = getFirestore();
     const q = query(
       collection(db, "tutor_sessions"),
-      where("user_id", "==", user.uid),
-      orderBy("last_updated", "desc"),
-      limit(10)
+      where("user_id", "==", user.uid)
     );
 
     const snap = await getDocs(q);
-    return snap.docs.map((doc) => {
+    const sessions = snap.docs.map((doc) => {
       const d = doc.data();
       return {
         id: doc.id,
@@ -207,6 +214,12 @@ export const contentService = {
           : Date.now(),
       };
     });
+
+    // Sort in-memory descending by updatedAt
+    sessions.sort((a, b) => b.updatedAt - a.updatedAt);
+
+    // Limit to 10
+    return sessions.slice(0, 10);
   },
 
   // Search endpoints

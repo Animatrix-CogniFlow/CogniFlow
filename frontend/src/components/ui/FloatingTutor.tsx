@@ -1,6 +1,7 @@
 import { useState, useRef, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, MessageCircle } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { cn } from "../../lib/utils";
 import { aiService } from "../../services/aiService";
 
@@ -10,6 +11,8 @@ interface FloatingTutorProps {
 }
 
 export function FloatingTutor({ persona, documentId }: FloatingTutorProps) {
+  const location = useLocation();
+  const isVisualLab = location.pathname.endsWith("/lab");
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [language, setLanguage] = useState("en");
@@ -44,7 +47,7 @@ export function FloatingTutor({ persona, documentId }: FloatingTutorProps) {
       default:
         return {
           avatar: "🤖",
-          name: "Socratic Engine",
+          name: "CogniFlow AI",
           color: "bg-abyss-800",
           text: "Upload your research. I will cross-examine your understanding.",
         };
@@ -131,7 +134,10 @@ export function FloatingTutor({ persona, documentId }: FloatingTutorProps) {
         dragConstraints={constraintsRef}
         dragElastic={0.1}
         dragMomentum={false}
-        className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-3 pointer-events-auto"
+        className={cn(
+          "fixed z-50 flex flex-col items-end gap-3 pointer-events-auto transition-all duration-300",
+          isVisualLab ? "bottom-28 right-8" : "bottom-8 right-8"
+        )}
         initial={{ opacity: 0, scale: 0 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.5 }}
