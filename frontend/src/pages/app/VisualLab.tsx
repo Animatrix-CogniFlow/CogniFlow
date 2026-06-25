@@ -306,9 +306,9 @@ export default function VisualLab() {
             <div className="h-16 w-16 rounded-full bg-gold-500/10 flex items-center justify-center mb-6">
               <Atom className="h-8 w-8 text-gold-500 animate-pulse" />
             </div>
-            <h3 className="font-display text-xl font-semibold mb-2">No active document context</h3>
+            <h3 className="font-display text-xl font-semibold mb-2">No study materials loaded</h3>
             <p className="text-silver-600 dark:text-silver-400 mb-6 text-sm">
-              Please select a textbook or upload notes to generate concept blueprints and visualize complex formulas.
+              Please choose a document or upload notes to start creating visual diagrams and learning key concepts.
             </p>
             {documents.length > 0 ? (
               <Button onClick={() => setDocDropOpen(true)}>Choose from Decks</Button>
@@ -325,7 +325,7 @@ export default function VisualLab() {
             <Card>
               <CardBody className="p-4 space-y-3">
                 <div className="flex items-center justify-between border-b border-silver-200 dark:border-white/10 pb-3">
-                  <h3 className="font-semibold text-sm tracking-wider uppercase text-silver-500">Document Hub</h3>
+                  <h3 className="font-semibold text-sm tracking-wider uppercase text-silver-500">Quick Actions</h3>
                 </div>
 
                 <Button
@@ -339,7 +339,7 @@ export default function VisualLab() {
                   ) : (
                     <Sparkles className="h-4 w-4 mr-2 text-gold-500" />
                   )}
-                  Play Intro Animation
+                  Show Topic Summary
                 </Button>
               </CardBody>
             </Card>
@@ -347,7 +347,7 @@ export default function VisualLab() {
             <Card className="max-h-[500px] overflow-y-auto">
               <CardBody className="p-4">
                 <h3 className="font-semibold text-sm tracking-wider uppercase text-silver-500 border-b border-silver-200 dark:border-white/10 pb-3 mb-3">
-                  Topics Outline ({topics.length})
+                  Chapters & Topics ({topics.length})
                 </h3>
 
                 {topicsLoading ? (
@@ -385,7 +385,7 @@ export default function VisualLab() {
                               {isLoading ? (
                                 <div className="py-4 text-center flex flex-col items-center gap-1.5">
                                   <Loader2 className="h-4 w-4 animate-spin text-gold-500" />
-                                  <span className="text-[10px] text-silver-500">Extracting key concepts...</span>
+                                  <span className="text-[10px] text-silver-500">Finding core topics...</span>
                                 </div>
                               ) : topicConcepts.length > 0 ? (
                                 topicConcepts.map((c, i) => (
@@ -417,7 +417,7 @@ export default function VisualLab() {
                                   </button>
                                 ))
                               ) : (
-                                <p className="text-center text-[10px] text-silver-500 py-2">No concepts found for this topic.</p>
+                                <p className="text-center text-[10px] text-silver-500 py-2">No key topics found for this chapter.</p>
                               )}
                             </div>
                           )}
@@ -436,8 +436,8 @@ export default function VisualLab() {
               <div className="relative min-h-[550px] rounded-3xl border border-silver-300 bg-abyss-950 flex flex-col items-center justify-center p-8 shadow-2xl dark:border-abyss-700/60">
                 <AmbientBackground variant="hero" particles={true} />
                 <Loader2 className="h-10 w-10 animate-spin text-gold-500 mb-4" />
-                <p className="text-white text-lg font-medium">Orchestrating visual structures...</p>
-                <p className="text-silver-500 text-xs mt-1">Gemini is outputting structured animation keyframes.</p>
+                <p className="text-white text-lg font-medium">Creating your visual explanation...</p>
+                <p className="text-silver-500 text-xs mt-1">Designing the diagram layout and notes.</p>
               </div>
             ) : isPlaying && animationScript ? (
               <div className="space-y-4">
@@ -451,11 +451,11 @@ export default function VisualLab() {
                   {/* Top Bar info inside Canvas */}
                   <div className="relative z-10 flex justify-between items-center text-white">
                     <Badge tone="flow" className="border-gold-500/30">
-                      <Atom className="h-4 w-4 mr-2" /> {selectedConcept || "Overview Blueprint"}
+                      <Atom className="h-4 w-4 mr-2" /> {selectedConcept || "Topic Summary"}
                     </Badge>
                     {regenAttempt > 1 && (
                       <Badge tone="danger" className="text-rose-400 bg-rose-500/10 border-rose-500/20">
-                        Attempt {regenAttempt} (Simplified Layout)
+                        Revision {regenAttempt} (Easier Explanation)
                       </Badge>
                     )}
                   </div>
@@ -521,10 +521,10 @@ export default function VisualLab() {
                   >
                     <div>
                       <h4 className="font-semibold text-lg flex items-center gap-2">
-                        <HelpCircle className="h-5 w-5 text-gold-500" /> Active Recall Evaluation
+                        <HelpCircle className="h-5 w-5 text-gold-500" /> How did you do?
                       </h4>
                       <p className="text-sm text-silver-600 dark:text-silver-400 mt-1">
-                        Do you feel you fully grasp the mechanisms and structures shown in this animation?
+                        Do you feel you understand this topic and the ideas shown in the diagram?
                       </p>
                     </div>
                     <div className="flex gap-3 shrink-0">
@@ -546,13 +546,13 @@ export default function VisualLab() {
                   <div className="h-16 w-16 rounded-full bg-gold-500/15 flex items-center justify-center mb-6">
                     <Play className="h-6 w-6 text-gold-400 ml-1 animate-bounce" />
                   </div>
-                  <h3 className="font-display text-2xl font-bold text-white mb-2">Interactive Visual Stage</h3>
+                  <h3 className="font-display text-2xl font-bold text-white mb-2">Visual Studio</h3>
                   <p className="text-silver-400 text-sm mb-6">
-                    Select a concept from the directory or trigger the document overview to draw custom Framer Motion shapes on canvas.
+                    Choose a topic from the sidebar on the left, or show the summary, to watch visual diagrams of your learning material.
                   </p>
                   {concepts.length > 0 && (
                     <Button onClick={playIntroOverview} className="bg-gold-500 hover:bg-gold-400 text-abyss-900 border-none shadow-lg">
-                      Start Mapping Blueprint
+                      Show Summary
                     </Button>
                   )}
                 </div>
@@ -572,9 +572,9 @@ export default function VisualLab() {
               exit={{ scale: 0.95, opacity: 0 }}
               className="w-full max-w-md rounded-2xl border border-silver-300 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-abyss-800"
             >
-              <h3 className="font-display text-lg font-bold mb-2">How can we clarify?</h3>
+              <h3 className="font-display text-lg font-bold mb-2">What would you like to clarify?</h3>
               <p className="text-sm text-silver-500 mb-4">
-                Tell us what was confusing (e.g. "Explain the formula symbols" or "What does water split into?"). Gemini will adapt the animation with simpler analogies.
+                Tell us what was confusing, and our AI will recreate the diagram with a simpler explanation.
               </p>
 
               <textarea
@@ -589,7 +589,7 @@ export default function VisualLab() {
                   Cancel
                 </Button>
                 <Button onClick={submitSimplification} loading={submittingFeedback} className="bg-gold-500 text-abyss-900 hover:bg-gold-400 border-none">
-                  Simplify Animation
+                  Try Again
                 </Button>
               </div>
             </motion.div>

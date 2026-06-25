@@ -21,7 +21,7 @@ import { contentService, type UploadResult } from "../../services/contentService
 import { formatBytes, cn } from "../../lib/utils";
 import { useChatStore } from "../../stores/useChatStore";
 
-const PIPELINE = ["Uploading", "Parse document", "Extract concepts", "Generate study material"];
+const PIPELINE = ["Uploading", "Reading document", "Finding key topics", "Creating study materials"];
 
 export default function Upload() {
   const navigate = useNavigate();
@@ -124,10 +124,10 @@ export default function Upload() {
         className="mb-6"
       >
         <h1 className="font-display text-3xl font-semibold tracking-tight text-abyss-900 dark:text-white">
-          Initialize Knowledge Base
+          Add Learning Material
         </h1>
         <p className="mt-2 text-silver-600 dark:text-silver-400">
-          Upload your PDF, slides, or notes. The CogniFlow AI engine will parse the document, extract core concepts, and build your interactive environment.
+          Upload your notes, slides, or textbook chapters (PDF) to start learning. CogniFlow will read the file, summarize the core topics, and create your personalized study space.
         </p>
       </motion.div>
 
@@ -163,7 +163,7 @@ export default function Upload() {
             </motion.div>
             
             <h3 className="font-display text-xl font-semibold tracking-tight">
-              {selectedFile ? "File Ready for Processing" : "Drag & Drop your document here"}
+              {selectedFile ? "File Ready" : "Drag & Drop your document here"}
             </h3>
             <p className="mt-2 text-sm text-silver-600 dark:text-silver-400">
               Supports PDF (Max 50MB)
@@ -236,7 +236,7 @@ export default function Upload() {
               className="bg-abyss-900 text-white hover:bg-abyss-800 dark:bg-gold-500 dark:text-abyss-900 dark:hover:bg-gold-400"
             >
               <Brain className="h-4 w-4 mr-2" /> 
-              {processing ? stage || "Analyzing..." : "Initialize AI Engines"}
+              {processing ? stage || "Reading file..." : "Start Processing"}
             </Button>
           </div>
 
@@ -250,16 +250,16 @@ export default function Upload() {
                       <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                     </div>
                     <div>
-                      <h3 className="font-display text-lg font-semibold tracking-tight">Intelligence Extracted</h3>
+                      <h3 className="font-display text-lg font-semibold tracking-tight">Material Added!</h3>
                       <p className="text-sm text-silver-600 dark:text-silver-400">
-                        {result.title} has been successfully parsed by the backend.
+                        {result.title} has been successfully loaded.
                       </p>
                     </div>
                   </div>
                   
                   <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                    <Stat icon={Brain} label="Key Concepts Mapped" value={result.total_concepts} />
-                    <Stat icon={FileText} label="Language Detected" valueText={result.language_code.toUpperCase()} />
+                    <Stat icon={Brain} label="Topics Identified" value={result.total_concepts} />
+                    <Stat icon={FileText} label="Language" valueText={result.language_code.toUpperCase()} />
                   </div>
                   
                   <div className="mt-6 flex flex-wrap gap-3 border-t border-emerald-500/20 pt-6">
@@ -292,7 +292,7 @@ export default function Upload() {
         <div>
           <Card className="sticky top-6">
             <CardBody>
-              <h3 className="mb-5 font-display text-lg font-semibold tracking-tight">AI Processing Status</h3>
+              <h3 className="mb-5 font-display text-lg font-semibold tracking-tight">Progress Tracker</h3>
               <div className="space-y-3">
                 {PIPELINE.map((p, i) => {
                   const activeIdx = PIPELINE.indexOf(stage);
@@ -343,9 +343,9 @@ export default function Upload() {
               )}
 
               <div className="mt-8 rounded-xl bg-silver-100 p-4 dark:bg-white/5 border border-silver-200 dark:border-white/10">
-                <Badge tone="flow" className="mb-3 border-gold-500/30">Backend Architecture</Badge>
+                <Badge tone="flow" className="mb-3 border-gold-500/30">How it works</Badge>
                 <p className="text-xs leading-relaxed text-silver-600 dark:text-silver-400">
-                  Documents are securely transmitted to the FastAPI server, chunked, and embedded using Gemini Pro. Once vectorized, they unlock interactive animations, voice exams, and customized flashcards.
+                  Your study material is read and organized using advanced AI technology. Once processed, you'll be able to watch interactive animations, practice with a voice tutor, and test yourself with customized flashcards.
                 </p>
               </div>
             </CardBody>

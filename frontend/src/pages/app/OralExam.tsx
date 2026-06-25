@@ -186,10 +186,10 @@ export default function OralExam() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="font-display text-2xl font-semibold tracking-tight">
-          Oral Examination
+          Voice Practice Partner
         </h1>
         <p className="mt-1 text-sm text-silver-600 dark:text-cobalt-400/70">
-          Speak your answers. The AI examiner evaluates clarity, accuracy, and depth.
+          Practice speaking your answers out loud. Our AI tutor will help you improve and provide friendly tips on your understanding.
         </p>
       </div>
 
@@ -205,7 +205,7 @@ export default function OralExam() {
         <Card className="mx-auto max-w-md">
           <CardBody className="space-y-5">
             <h2 className="font-display text-lg font-semibold tracking-tight">
-              Set up your exam
+              Choose Your Study Material
             </h2>
 
             {/* Document picker */}
@@ -283,7 +283,7 @@ export default function OralExam() {
             {/* Number of questions */}
             <div>
               <p className="mb-1.5 text-sm font-medium text-silver-700 dark:text-cobalt-300">
-                Number of questions
+                Select Question Count
               </p>
               <div className="flex gap-2">
                 {[3, 5, 8, 10].map((n) => (
@@ -308,7 +308,7 @@ export default function OralExam() {
               onClick={startExam}
               disabled={!selectedDocId || docsLoading}
             >
-              <Mic className="h-4 w-4" /> Start exam
+              <Mic className="h-4 w-4" /> Start Session
             </Button>
           </CardBody>
         </Card>
@@ -348,14 +348,14 @@ export default function OralExam() {
 
               <div className="relative mt-8 max-w-md text-center">
                 <p className="text-xs font-medium uppercase tracking-wider text-gold-400 dark:text-cobalt-300">
-                  Question {qIndex + 1} of {totalQ}
+                  Topic {qIndex + 1} of {totalQ}
                 </p>
                 <p className="mt-2 text-lg text-white leading-relaxed">
                   {question?.question}
                 </p>
                 {question?.key_points && question.key_points.length > 0 && (
                   <p className="mt-2 text-xs text-white/40">
-                    Hint: cover — {question.key_points.slice(0, 2).join(", ")}
+                    Tip: Try to mention: {question.key_points.slice(0, 2).join(", ")}
                   </p>
                 )}
               </div>
@@ -371,13 +371,13 @@ export default function OralExam() {
                 disabled={stage === "analyzing" || stage === "between"}
               >
                 {stage === "recording" ? (
-                  <><MicOff className="h-5 w-5" /> Stop & submit</>
+                  <><MicOff className="h-5 w-5" /> Stop & Answer</>
                 ) : stage === "analyzing" ? (
-                  <><Loader2 className="h-5 w-5 animate-spin" /> Analyzing…</>
+                  <><Loader2 className="h-5 w-5 animate-spin" /> Listening…</>
                 ) : stage === "between" ? (
-                  <><CheckCircle2 className="h-5 w-5" /> Next question…</>
+                  <><CheckCircle2 className="h-5 w-5" /> Moving on…</>
                 ) : (
-                  <><Mic className="h-5 w-5" /> Start speaking</>
+                  <><Mic className="h-5 w-5" /> Record Answer</>
                 )}
               </Button>
 
@@ -385,7 +385,7 @@ export default function OralExam() {
                 onClick={reset}
                 className="relative mt-4 flex items-center gap-1.5 text-xs text-white/40 transition hover:text-white/70"
               >
-                <RotateCcw className="h-3.5 w-3.5" /> End exam
+                <RotateCcw className="h-3.5 w-3.5" /> Cancel Session
               </button>
             </div>
           </div>
@@ -395,7 +395,7 @@ export default function OralExam() {
             <Card>
               <CardBody>
                 <h3 className="mb-3 font-display font-semibold tracking-tight">
-                  Transcript
+                  Conversation History
                 </h3>
                 <div className="max-h-64 space-y-3 overflow-y-auto">
                   <AnimatePresence initial={false}>
@@ -407,7 +407,7 @@ export default function OralExam() {
                         className={t.speaker === "examiner" ? "" : "text-right"}
                       >
                         <p className="text-[11px] uppercase tracking-wider text-silver-500 dark:text-cobalt-400/60">
-                          {t.speaker === "examiner" ? "Examiner" : "You"}
+                          {t.speaker === "examiner" ? "Tutor" : "You"}
                         </p>
                         <p
                           className={cn(
@@ -443,7 +443,7 @@ export default function OralExam() {
                     {lastEval.missed_points.length > 0 && (
                       <div>
                         <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-silver-500 dark:text-cobalt-400/60">
-                          Missed points
+                          Suggestions for improvement
                         </p>
                         <ul className="space-y-1">
                           {lastEval.missed_points.map((p, i) => (
@@ -458,7 +458,7 @@ export default function OralExam() {
                   </div>
                 ) : (
                   <p className="text-sm text-silver-500 dark:text-cobalt-400/60">
-                    Submit an answer to receive AI feedback.
+                    Record your answer to receive friendly AI tips.
                   </p>
                 )}
               </CardBody>
@@ -474,7 +474,7 @@ export default function OralExam() {
           <div className="flex flex-col items-center gap-3 rounded-3xl border border-silver-300 bg-gradient-to-br from-silver-900 to-abyss-900 px-6 py-10 text-center dark:border-abyss-700/60">
             <CheckCircle2 className="h-12 w-12 text-emerald-400" />
             <h2 className="font-display text-2xl font-semibold text-white">
-              Exam complete!
+              Session completed!
             </h2>
             <p className="text-white/60 text-sm">
               {results.title} · {results.subject}
@@ -483,10 +483,10 @@ export default function OralExam() {
               <span className="font-display text-5xl font-bold text-gold-400 dark:text-cobalt-300">
                 {Math.round(results.average_score * 10)}%
               </span>
-              <span className="text-white/40 text-sm">average score</span>
+              <span className="text-white/40 text-sm">average grade</span>
             </div>
             <Button variant="secondary" onClick={reset} className="mt-4">
-              <RotateCcw className="h-4 w-4" /> Take another exam
+              <RotateCcw className="h-4 w-4" /> Start new session
             </Button>
           </div>
 
@@ -497,7 +497,7 @@ export default function OralExam() {
                 <CardBody>
                   <div className="mb-2 flex items-center justify-between">
                     <p className="text-xs font-medium uppercase tracking-wider text-silver-500 dark:text-cobalt-400/60">
-                      Question {i + 1}
+                      Topic {i + 1}
                     </p>
                     <span
                       className={cn(

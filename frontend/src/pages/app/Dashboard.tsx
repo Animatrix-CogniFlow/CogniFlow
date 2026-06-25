@@ -65,7 +65,7 @@ export default function Dashboard() {
           Welcome back, {user?.name?.split(" ")[0] ?? "Learner"}.
         </motion.h1>
         <p className="mt-1 text-silver-600 dark:text-silver-600">
-          Your intelligent learning environment is ready.
+          Your personalized study space is ready.
         </p>
       </div>
 
@@ -220,7 +220,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">AI Orchestration</CardTitle>
+                <CardTitle className="text-base">Study Assistant Status</CardTitle>
                 <span className="relative flex h-2.5 w-2.5">
                   <span className={`absolute inline-flex h-full w-full rounded-full ${orchestrating ? "bg-emerald-400 [animation:cf-pulse-ring_1.4s_ease-out_infinite]" : ""}`} />
                   <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${orchestrating ? "bg-emerald-500" : "bg-gold-500"}`} />
@@ -230,8 +230,8 @@ export default function Dashboard() {
             <CardBody className="pt-0">
               <p className="text-sm text-silver-600 dark:text-silver-600">
                 {orchestrating
-                  ? "Agents are actively processing your content."
-                  : "All agents are standing by, ready to orchestrate."}
+                  ? "Our AI assistants are busy organizing your study materials."
+                  : "Your assistant is ready to help you study."}
               </p>
               <Button
                 className="mt-4 w-full"
@@ -239,10 +239,10 @@ export default function Dashboard() {
                 onClick={runOrchestration}
                 loading={orchestrating}
               >
-                {orchestrating ? "Orchestrating…" : "Run orchestration"}
+                {orchestrating ? "Processing…" : "Update materials"}
               </Button>
               <Link to="/app/agents" className="mt-2 block text-center text-sm text-gold-600 hover:underline dark:text-gold-600">
-                Open agent graph
+                View study assistants
               </Link>
             </CardBody>
           </Card>

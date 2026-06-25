@@ -64,14 +64,14 @@ export default function Agents() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight">
-            Multi-Agent Orchestration
+            Study Assistants Hub
           </h1>
           <p className="mt-1 text-silver-600 dark:text-silver-600">
-            Watch autonomous agents collaborate and hand off tasks in real time.
+            Meet the AI helpers that prepare your flashcards, generate quizzes, and coordinate your learning path.
           </p>
         </div>
         <Button onClick={runOrchestration} loading={orchestrating}>
-          <Play className="h-4 w-4" /> {orchestrating ? "Orchestrating…" : "Run orchestration"}
+          <Play className="h-4 w-4" /> {orchestrating ? "Processing…" : "Update materials"}
         </Button>
       </div>
 

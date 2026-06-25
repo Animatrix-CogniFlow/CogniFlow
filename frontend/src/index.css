@@ -37,21 +37,21 @@
   --color-silver-900: #0f172a;
 
   /* Deep blue / dark-mode scale */
-  --color-abyss-950: #060912;
-  --color-abyss-900: #0b0f1e;
-  --color-abyss-850: #101628;
-  --color-abyss-800: #161e35;
-  --color-abyss-700: #1e2a4a;
-  --color-abyss-600: #28375e;
+  --color-abyss-950: #050811;
+  --color-abyss-900: #0c1226;
+  --color-abyss-850: #141d3c;
+  --color-abyss-800: #1c2a54;
+  --color-abyss-700: #263970;
+  --color-abyss-600: #334a8f;
 
   /* Blue accent scale for dark mode */
-  --color-cobalt-50:  #e8f0ff;
-  --color-cobalt-100: #ccdcff;
-  --color-cobalt-200: #99baff;
-  --color-cobalt-300: #70a1ff;
-  --color-cobalt-400: #4d82ff;
-  --color-cobalt-500: #2962ff;
-  --color-cobalt-600: #1240d4;
+  --color-cobalt-50:  #f0f5ff;
+  --color-cobalt-100: #e6efff;
+  --color-cobalt-200: #c2d7ff;
+  --color-cobalt-300: #9cc0ff;
+  --color-cobalt-400: #70a1ff;
+  --color-cobalt-500: #4d82ff;
+  --color-cobalt-600: #2962ff;
   --color-cobalt-700: #0e30ab;
   --color-cobalt-800: #0b2487;
   --color-cobalt-900: #081a63;

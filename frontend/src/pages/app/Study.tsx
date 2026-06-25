@@ -67,7 +67,7 @@ export default function Study() {
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight">Study Decks</h1>
           <p className="mt-1 text-silver-600 dark:text-silver-600">
-            Paste notes and CogniFlow generates flashcards & quizzes. Review with spaced repetition.
+            Create flashcard sets and practice quizzes from your study notes. Review them regularly to lock them in memory.
           </p>
         </div>
         <Button onClick={() => setOpen(true)}>
@@ -78,11 +78,11 @@ export default function Study() {
       {decks.length === 0 ? (
         <EmptyState
           icon={Layers}
-          title="No study decks yet"
-          description="Create your first deck by pasting study notes. We'll auto-generate flashcards and a quiz instantly."
+          title="No study sets yet"
+          description="Create your first set of flashcards and quiz questions by pasting your study notes."
           action={
             <Button onClick={() => setOpen(true)}>
-              <Plus className="h-4 w-4" /> Create a deck
+              <Plus className="h-4 w-4" /> Create a set
             </Button>
           }
         />
@@ -180,11 +180,11 @@ export default function Study() {
       )}
 
       {/* Create deck modal */}
-      <Modal open={open} onClose={() => !generating && setOpen(false)} title="Create a study deck">
+      <Modal open={open} onClose={() => !generating && setOpen(false)} title="Create a Study Set">
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
-              label="Deck title"
+              label="Set Title"
               placeholder="e.g. Cell Biology Ch.4"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -204,7 +204,7 @@ export default function Study() {
               value={notes}
               onChange={(e) => previewGen(e.target.value)}
               rows={6}
-              placeholder="Paste your notes, definitions, or a passage. CogniFlow extracts key concepts and builds flashcards + a quiz automatically."
+              placeholder="Paste your notes, definitions, or textbook passages here. We'll find the key terms and generate your flashcards and quiz questions."
               className="w-full resize-none rounded-xl border border-silver-300 bg-white px-3.5 py-3 text-sm outline-none focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 dark:border-white/[0.08] dark:bg-abyss-800/60 dark:text-silver-600"
             />
             <AnimatePresence>
@@ -233,16 +233,16 @@ export default function Study() {
               loading={generating}
               disabled={!title.trim() || notes.trim().length < 40}
             >
-              <Sparkles className="h-4 w-4" /> Generate deck
+              <Sparkles className="h-4 w-4" /> Create Study Set
             </Button>
           </div>
         </div>
       </Modal>
 
       {/* Delete confirm */}
-      <Modal open={!!confirmId} onClose={() => setConfirmId(null)} title="Delete deck?">
+      <Modal open={!!confirmId} onClose={() => setConfirmId(null)} title="Delete study set?">
         <p className="text-sm text-silver-600 dark:text-silver-600">
-          This permanently removes the deck, its flashcards, and quiz history.
+          This will permanently delete this study set, including all flashcards and quiz scores.
         </p>
         <div className="mt-5 flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setConfirmId(null)}>
