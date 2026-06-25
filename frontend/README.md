@@ -20,7 +20,7 @@ CogniFlow utilizes a decoupled, high-performance architecture built on lightweig
 
 To ensure consistency between design components and frontend code modules, our complete interface architecture and user flows are mapped out in Figma.
 
-> 🛠️ **Design Workspace:** [Access the CogniFlow Figma Architecture Canvas](https://vivid-crisp-58059936.figma.site/)
+> 🛠️ **Design Workspace:** [Access the CogniFlow Figma Architecture Canvas](https://vote-dimly-48699548.figma.site/)
 
 ### System Design Framework:
 * **Design Tokens:** Pre-defined spacing, typography scale, and color palettes optimized for dark/light mode readability for tertiary and secondary study states.

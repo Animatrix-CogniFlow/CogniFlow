@@ -19,28 +19,29 @@ const GRADES: { grade: ReviewGrade; label: string; sub: string; cls: string }[] 
 export default function Review() {
   const { deckId } = useParams();
   const navigate = useNavigate();
-  const deck = useStudyStore((s) => s.decks.find((d) => d.id === deckId));
+  const deck = useStudyStore((s) => s.documents.find((d) => d.document_id === deckId));
   const reviewCard = useStudyStore((s) => s.reviewCard);
 
   // Snapshot the due queue once at session start so grading doesn't reshuffle mid-session.
   const queue = useMemo(() => {
     if (!deck) return [];
-    const due = studyService.dueCards(deck.cards);
-    return (due.length ? due : deck.cards).map((c) => c.id);
-  }, [deck?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    const cards = deck.flashcards ?? [];
+    const due = studyService.dueCards(cards);
+    return (due.length ? due : cards).map((c) => c.id);
+  }, [deck?.document_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [pos, setPos] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [done, setDone] = useState(0);
 
   const currentId = queue[pos];
-  const card = deck?.cards.find((c) => c.id === currentId);
+  const card = deck?.flashcards?.find((c) => c.id === currentId);
   const finished = pos >= queue.length;
 
   const grade = useCallback(
     (g: ReviewGrade) => {
       if (!deck || !currentId) return;
-      reviewCard(deck.id, currentId, g);
+      reviewCard(deck.document_id, currentId, g);
       setDone((d) => d + 1);
       setFlipped(false);
       setPos((p) => p + 1);
@@ -69,13 +70,13 @@ export default function Review() {
     <PageContainer>
       <div className="mb-6 flex items-center justify-between">
         <button
-          onClick={() => navigate(`/app/study/${deck.id}`)}
+          onClick={() => navigate(`/app/study/${deck.document_id}`)}
           className="inline-flex items-center gap-1.5 text-sm text-silver-600 transition hover:text-gold-600 dark:text-silver-600"
         >
           <ArrowLeft className="h-4 w-4" /> {deck.title}
         </button>
         {!finished && (
-          <Badge tone="flow">
+          <Badge tone="neutral">
             {pos + 1} / {queue.length}
           </Badge>
         )}
@@ -109,10 +110,10 @@ export default function Review() {
               based on how well you recalled each one.
             </p>
             <div className="mt-6 flex justify-center gap-3">
-              <Button onClick={() => navigate(`/app/study/${deck.id}/quiz`)} disabled={!deck.quiz.length}>
+              <Button onClick={() => navigate(`/app/study/${deck.document_id}/quiz`)}>
                 Take the quiz
               </Button>
-              <Button variant="secondary" onClick={() => navigate(`/app/study/${deck.id}`)}>
+              <Button variant="secondary" onClick={() => navigate(`/app/study/${deck.document_id}`)}>
                 Back to deck
               </Button>
             </div>

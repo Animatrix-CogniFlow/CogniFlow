@@ -1,51 +1,85 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Brain,
   ListChecks,
   ArrowLeft,
-  Plus,
-  Trash2,
-  RefreshCw,
   Clock,
   Trophy,
   FileText,
+  Loader2,
 } from "lucide-react";
 import { PageContainer } from "../../components/shell/PageContainer";
 import { Card, CardBody } from "../../components/ui/Card";
 import { SpotlightCard } from "../../components/ui/SpotlightCard";
 import { Button } from "../../components/ui/Button";
 import { Badge } from "../../components/ui/Badge";
-import { Input } from "../../components/ui/Input";
 import { useStudyStore } from "../../stores/useStudyStore";
 import { studyService } from "../../services/studyService";
-import { timeAgo } from "../../lib/utils";
-
 export default function DeckDetail() {
   const { deckId } = useParams();
   const navigate = useNavigate();
-  const deck = useStudyStore((s) => s.decks.find((d) => d.id === deckId));
-  const addCard = useStudyStore((s) => s.addCard);
-  const deleteCard = useStudyStore((s) => s.deleteCard);
-  const regenerate = useStudyStore((s) => s.regenerate);
+
+  const id = deckId || "";
+
+  const getDocument = useStudyStore((s) => s.getDocument);
+  const saveFlashcards = useStudyStore((s) => s.saveFlashcards);
+  
+  const deck = useStudyStore((s) => s.documents.find((d) => d.document_id === id));
 
   const [tab, setTab] = useState<"cards" | "quiz" | "notes">("cards");
-  const [front, setFront] = useState("");
-  const [back, setBack] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!deck) return <Navigate to="/app/study" replace />;
+  useEffect(() => {
+    if (!id) return;
 
-  const due = studyService.dueCards(deck.cards).length;
-  const mastery = studyService.deckMastery(deck);
-  const best = deck.attempts.length ? Math.max(...deck.attempts.map((a) => a.score)) : null;
+    async function loadData() {
+      const currentDeck = getDocument(id);
+      if (currentDeck && currentDeck.flashcards && currentDeck.flashcards.length > 0) {
+        return; // Already loaded!
+      }
 
-  function handleAdd() {
-    if (!front.trim() || !back.trim() || !deck) return;
-    addCard(deck.id, front.trim(), back.trim());
-    setFront("");
-    setBack("");
+      setLoading(true);
+      setError(null);
+      try {
+        // Try fetching existing flashcards
+        let set = await studyService.getFlashcards(id).catch(async () => {
+          // If not found, try generating
+          return studyService.generateFlashcards(id);
+        });
+
+        if (set && set.flashcards) {
+          saveFlashcards(id, set.flashcard_set_id, set.flashcards);
+        }
+      } catch (err: any) {
+        setError(err.message || "Failed to load flashcards.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, [deckId, getDocument, saveFlashcards]);
+
+  if (!deckId) return <Navigate to="/app/study" replace />;
+
+  // Display a placeholder / redirect if deck registration not found
+  if (!deck) {
+    return (
+      <PageContainer>
+        <div className="flex h-60 flex-col items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-gold-500" />
+          <p className="mt-4 text-sm text-silver-600">Registering deck details...</p>
+        </div>
+      </PageContainer>
+    );
   }
+
+  const cards = deck.flashcards ?? [];
+  const due = studyService.dueCards(cards).length;
+  const mastery = studyService.deckMastery({ cards } as any);
 
   return (
     <PageContainer>
@@ -60,16 +94,15 @@ export default function DeckDetail() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Badge tone="flow">{deck.subject}</Badge>
-            <span className="text-xs text-silver-600">Updated {timeAgo(deck.updatedAt)}</span>
+            <Badge tone="neutral">{deck.subject}</Badge>
           </div>
           <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight">{deck.title}</h1>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => navigate(`/app/study/${deck.id}/review`)} disabled={!deck.cards.length}>
+          <Button onClick={() => navigate(`/app/study/${deck.document_id}/review`)} disabled={cards.length === 0}>
             <Brain className="h-4 w-4" /> Review {due > 0 && `(${due})`}
           </Button>
-          <Button variant="secondary" onClick={() => navigate(`/app/study/${deck.id}/quiz`)} disabled={!deck.quiz.length}>
+          <Button variant="secondary" onClick={() => navigate(`/app/study/${deck.document_id}/quiz`)}>
             <ListChecks className="h-4 w-4" /> Take quiz
           </Button>
         </div>
@@ -77,10 +110,9 @@ export default function DeckDetail() {
 
       {/* Stats */}
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatBox icon={Brain} label="Flashcards" value={`${deck.cards.length}`} />
+        <StatBox icon={Brain} label="Flashcards" value={`${cards.length}`} />
         <StatBox icon={Clock} label="Due now" value={`${due}`} tone={due > 0 ? "warning" : "neutral"} />
-        <StatBox icon={Trophy} label="Best score" value={best !== null ? `${best}%` : "—"} />
-        <StatBox icon={ListChecks} label="Mastery" value={`${mastery}%`} />
+        <StatBox icon={Trophy} label="Mastery" value={`${mastery}%`} />
       </div>
 
       {/* Tabs */}
@@ -119,56 +151,40 @@ export default function DeckDetail() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
             >
-              {/* Add card */}
-              <Card className="mb-5">
-                <CardBody>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Input label="Front (question)" value={front} onChange={(e) => setFront(e.target.value)} placeholder="What is…?" />
-                    <Input label="Back (answer)" value={back} onChange={(e) => setBack(e.target.value)} placeholder="The answer…" />
-                  </div>
-                  <div className="mt-3 flex items-center justify-between">
-                    <Button variant="outline" size="sm" onClick={() => regenerate(deck.id)}>
-                      <RefreshCw className="h-4 w-4" /> Regenerate from notes
-                    </Button>
-                    <Button size="sm" onClick={handleAdd} disabled={!front.trim() || !back.trim()}>
-                      <Plus className="h-4 w-4" /> Add card
-                    </Button>
-                  </div>
-                </CardBody>
-              </Card>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                {deck.cards.map((c) => (
-                  <motion.div key={c.id} layout>
-                    <Card className="group h-full">
-                      <CardBody className="flex h-full flex-col">
-                        <div className="flex items-start justify-between gap-2">
+              {loading ? (
+                <div className="flex py-12 items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-gold-500 mr-2" />
+                  <span className="text-sm text-silver-600">Retrieving flashcards from AI...</span>
+                </div>
+              ) : error ? (
+                <div className="text-center py-12 text-rose-500 font-medium">
+                  {error}
+                </div>
+              ) : cards.length === 0 ? (
+                <div className="text-center py-12 text-silver-500 font-medium">
+                  No flashcards found for this document.
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {cards.map((c) => (
+                    <motion.div key={c.id} layout>
+                      <Card className="group h-full">
+                        <CardBody className="flex h-full flex-col">
                           <p className="text-sm font-medium">{c.front}</p>
-                          <button
-                            onClick={() => deleteCard(deck.id, c.id)}
-                            aria-label="Delete card"
-                            className="shrink-0 rounded p-1 text-silver-600 opacity-0 transition group-hover:opacity-100 hover:text-rose-500"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                        <p className="mt-2 border-t border-dashed border-silver-300 pt-2 text-sm text-silver-600 dark:border-white/10 dark:text-silver-600">
-                          {c.back}
-                        </p>
-                        <div className="mt-auto flex items-center gap-2 pt-3 text-[11px] text-silver-600">
-                          <span>Reviews: {c.reviews}</span>
-                          <span>·</span>
-                          <span>
-                            {c.dueAt <= Date.now()
-                              ? "Due now"
-                              : `Due ${timeAgo(c.dueAt).replace(" ago", " from now")}`}
-                          </span>
-                        </div>
-                      </CardBody>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
+                          <p className="mt-2 border-t border-dashed border-silver-300 pt-2 text-sm text-silver-600 dark:border-white/10 dark:text-silver-600">
+                            {c.back}
+                          </p>
+                          <div className="mt-auto flex items-center gap-2 pt-3 text-[11px] text-silver-600">
+                            <span>Reviews: {c.reviews || 0}</span>
+                            <span>·</span>
+                            <span>Interval: {c.interval || 0}d</span>
+                          </div>
+                        </CardBody>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -182,36 +198,15 @@ export default function DeckDetail() {
               <SpotlightCard className="p-6 text-center" tilt={false}>
                 <ListChecks className="mx-auto h-8 w-8 text-gold-600" />
                 <h3 className="mt-3 font-display text-lg font-semibold tracking-tight">
-                  {deck.quiz.length} auto-generated questions
+                  Auto-generated Interactive Quiz
                 </h3>
                 <p className="mx-auto mt-1 max-w-md text-sm text-silver-600 dark:text-silver-600">
-                  Multiple-choice questions generated from your notes, graded instantly with explanations.
+                  Multiple-choice questions generated from your uploaded document, graded instantly with explanation feedback.
                 </p>
-                <Button className="mt-5" onClick={() => navigate(`/app/study/${deck.id}/quiz`)} disabled={!deck.quiz.length}>
+                <Button className="mt-5" onClick={() => navigate(`/app/study/${deck.document_id}/quiz`)}>
                   Start quiz
                 </Button>
               </SpotlightCard>
-
-              {deck.attempts.length > 0 && (
-                <Card className="mt-5">
-                  <CardBody>
-                    <h4 className="mb-3 font-display font-semibold tracking-tight">Attempt history</h4>
-                    <div className="space-y-2">
-                      {deck.attempts.map((a) => (
-                        <div key={a.id} className="flex items-center justify-between rounded-lg bg-silver-200 px-3 py-2 text-sm dark:bg-white/[0.03]">
-                          <span className="text-silver-600 dark:text-silver-600">{timeAgo(a.takenAt)}</span>
-                          <span>
-                            {a.correct}/{a.total} correct
-                          </span>
-                          <Badge tone={a.score >= 70 ? "success" : a.score >= 40 ? "warning" : "neutral"}>
-                            {a.score}%
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </CardBody>
-                </Card>
-              )}
             </motion.div>
           )}
 
@@ -225,7 +220,7 @@ export default function DeckDetail() {
               <Card>
                 <CardBody>
                   <p className="whitespace-pre-wrap text-sm leading-relaxed text-silver-600 dark:text-silver-600">
-                    {deck.notes}
+                    This study set was auto-generated from your uploaded document. You can manage or replace the source document in the upload panel.
                   </p>
                 </CardBody>
               </Card>

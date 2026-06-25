@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Upload,
@@ -35,23 +34,14 @@ export default function Dashboard() {
   const { sessions, loading } = useSessions();
   const user = useAuthStore((s) => s.user);
   const { orchestrating, runOrchestration } = useAgentStore();
-  const decks = useStudyStore((s) => s.decks);
-  const seedIfEmpty = useStudyStore((s) => s.seedIfEmpty);
+  const decks = useStudyStore((s) => s.documents);
 
-  useEffect(() => {
-    seedIfEmpty();
-  }, [seedIfEmpty]);
-
-  const totalDue = decks.reduce((n, d) => n + studyService.dueCards(d.cards).length, 0);
-  const totalCards = decks.reduce((n, d) => n + d.cards.length, 0);
+  const totalDue = decks.reduce((n: number, d: any) => n + studyService.dueCards(d.flashcards ?? []).length, 0);
   const masteredCards = decks.reduce(
-    (n, d) => n + d.cards.filter((c) => c.repetitions >= 2 && c.interval >= 6).length,
+    (n: number, d: any) => n + (d.flashcards ?? []).filter((c: any) => c.repetitions >= 2 && c.interval >= 6).length,
     0
   );
-  const attempts = decks.flatMap((d) => d.attempts);
-  const avgScore = attempts.length
-    ? Math.round(attempts.reduce((n, a) => n + a.score, 0) / attempts.length)
-    : 0;
+  const avgScore = 0;
 
   return (
     <PageContainer>
@@ -114,11 +104,11 @@ export default function Dashboard() {
                 </Link>
               </div>
               <StaggerGroup className="grid gap-4 sm:grid-cols-2">
-                {decks.slice(0, 4).map((d) => {
-                  const due = studyService.dueCards(d.cards).length;
+                {decks.slice(0, 4).map((d: any) => {
+                  const due = studyService.dueCards(d.flashcards ?? []).length;
                   return (
-                    <StaggerItem key={d.id}>
-                      <Link to={`/app/study/${d.id}`}>
+                    <StaggerItem key={d.document_id}>
+                      <Link to={`/app/study/${d.document_id}`}>
                         <motion.div
                           whileHover={{ y: -3 }}
                           className="group flex items-center gap-3 rounded-2xl border border-silver-300 bg-white p-4 transition-colors hover:border-gold-400 dark:border-abyss-700/60 dark:bg-abyss-800 dark:hover:border-gold-400/30"
@@ -129,7 +119,7 @@ export default function Dashboard() {
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">{d.title}</p>
                             <p className="text-xs text-silver-600">
-                              {d.cards.length} cards · {d.quiz.length} quiz
+                              {(d.flashcards ?? []).length} cards
                             </p>
                           </div>
                           {due > 0 ? (
@@ -162,7 +152,7 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
-              {sessions.map((s) => (
+              {sessions.map((s: any) => (
                 <SessionCard key={s.id} session={s} />
               ))}
             </div>
@@ -188,105 +178,55 @@ export default function Dashboard() {
                   </p>
                   <div className="mt-3 space-y-1.5">
                     {decks
-                      .filter((d) => studyService.dueCards(d.cards).length > 0)
+                      .filter((d: any) => studyService.dueCards(d.flashcards ?? []).length > 0)
                       .slice(0, 3)
-                      .map((d) => (
+                      .map((d: any) => (
                         <Link
-                          key={d.id}
-                          to={`/app/study/${d.id}/review`}
+                          key={d.document_id}
+                          to={`/app/study/${d.document_id}/review`}
                           className="flex items-center justify-between rounded-lg bg-silver-200 px-3 py-2 text-sm transition hover:bg-gold-500 dark:bg-white/[0.03] dark:hover:bg-gold-500/10"
                         >
                           <span className="truncate">{d.title}</span>
                           <span className="shrink-0 font-medium text-amber-500">
-                            {studyService.dueCards(d.cards).length}
+                            {studyService.dueCards(d.flashcards ?? []).length}
                           </span>
                         </Link>
                       ))}
                   </div>
+                  <Link to="/app/study">
+                    <Button className="mt-4 w-full" size="sm">
+                      Go to review stage
+                    </Button>
+                  </Link>
                 </>
               ) : (
                 <p className="text-sm text-silver-600 dark:text-silver-600">
-                  You're all caught up — no cards due right now. {totalCards > 0 ? `(${totalCards} total)` : ""}
+                  All caught up! No cards due for review.
                 </p>
               )}
-              <Link to="/app/study">
-                <Button className="mt-4 w-full" variant="secondary">
-                  <Layers className="h-4 w-4" /> Open study decks
-                </Button>
-              </Link>
             </CardBody>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Study Assistant Status</CardTitle>
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className={`absolute inline-flex h-full w-full rounded-full ${orchestrating ? "bg-emerald-400 [animation:cf-pulse-ring_1.4s_ease-out_infinite]" : ""}`} />
-                  <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${orchestrating ? "bg-emerald-500" : "bg-gold-500"}`} />
-                </span>
-              </div>
-            </CardHeader>
-            <CardBody className="pt-0">
-              <p className="text-sm text-silver-600 dark:text-silver-600">
-                {orchestrating
-                  ? "Our AI assistants are busy organizing your study materials."
-                  : "Your assistant is ready to help you study."}
+          {/* AI Orchestrator */}
+          <Card className="relative overflow-hidden">
+            <CardBody className="relative z-10">
+              <h4 className="font-display font-semibold tracking-tight">AI Orchestrator</h4>
+              <p className="mt-1 text-xs text-silver-600 leading-relaxed">
+                Manages and updates the cognitive agents, syncing concepts, quizzes, and tutor streams.
               </p>
               <Button
                 className="mt-4 w-full"
+                size="sm"
                 variant="secondary"
                 onClick={runOrchestration}
                 loading={orchestrating}
               >
-                {orchestrating ? "Processing…" : "Update materials"}
+                Sync Study Engine
               </Button>
-              <Link to="/app/agents" className="mt-2 block text-center text-sm text-gold-600 hover:underline dark:text-gold-600">
-                View study assistants
-              </Link>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Analytics preview</CardTitle>
-            </CardHeader>
-            <CardBody className="pt-0">
-              <MiniChart />
             </CardBody>
           </Card>
         </div>
       </div>
     </PageContainer>
-  );
-}
-
-function MiniChart() {
-  const bars = [40, 65, 50, 80, 60, 92, 74];
-  const days = ["M", "T", "W", "T", "F", "S", "S"];
-  return (
-    <div>
-      <div className="flex h-28 items-end gap-2">
-        {bars.map((b, i) => (
-          <div key={i} className="group relative flex flex-1 items-end">
-            <motion.div
-              initial={{ height: 0 }}
-              animate={{ height: `${b}%` }}
-              whileHover={{ scaleY: 1.05 }}
-              transition={{ duration: 0.6, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full origin-bottom cursor-pointer rounded-t-md bg-gradient-to-t from-gold-400/70 to-gold-600 transition-colors group-hover:from-gold-400 group-hover:to-gold-600"
-            />
-            <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 rounded-md bg-silver-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 dark:bg-white dark:text-abyss-900">
-              {b}%
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-2 flex gap-2 text-center text-[11px] text-silver-600">
-        {days.map((d, i) => (
-          <span key={i} className="flex-1">{d}</span>
-        ))}
-      </div>
-    </div>
   );
 }
