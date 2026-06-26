@@ -11,3 +11,4 @@ openai
 numpy
 requests
 python-dotenv
+pypdf
