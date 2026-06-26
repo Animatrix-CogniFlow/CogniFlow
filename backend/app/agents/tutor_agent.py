@@ -14,27 +14,38 @@ async def chat_with_tutor(
     document_summary: str,
     search_web: bool = False,
     output_language_code: str = "en",
-    persona: str = "university"
+    persona: str = "university",
+    page_content: str | None = None
 ) -> str:
 
     language_instruction = get_language_instruction(output_language_code)
     persona_instruction = get_persona_instruction(persona)
-    use_gemini = should_use_gemini(output_language_code)
+    use_gemini = should_use_gemini(output_language_code) or search_web
 
     scope_instruction = f"""
-    The student has enabled extended learning mode.
-    Go beyond the uploaded notes to give richer explanations, real world examples and deeper context.
-    Always tie your answer back to what the student is studying.
+    The student has enabled extended learning mode (Web Research is ON).
+    Use the Google Search tool to research and find accurate, up-to-date information, real-world examples, or context related to their query.
+    Always tie your findings back to what the student is studying in the uploaded material and current page context.
     """ if search_web else f"""
-    Stay strictly focused on the uploaded study material summarised below.
-    If the student asks something outside the material, let them know and suggest enabling extended learning mode.
+    Stay strictly focused on the uploaded study material and current page context.
+    If the student asks something outside these materials, let them know and suggest enabling Web Research mode.
     """
+
+    page_context = ""
+    if page_content:
+        page_context = f"""
+
+The student is currently looking at this active page content on their screen:
+---
+{page_content}
+---"""
 
     system_prompt = f"""
     You are CogniFlow, an AI tutor helping a student study {subject}.
 
-    The student is currently studying:
+    The student is currently studying this uploaded material:
     {document_summary}
+    {page_context}
 
     {scope_instruction}
     {language_instruction}
@@ -55,9 +66,18 @@ async def chat_with_tutor(
             history_text += f"{role}: {msg['content']}\n"
         history_text += f"Student: {user_message}\nTutor:"
         full_prompt = f"{system_prompt}\n\nConversation:\n{history_text}"
+
+        config = None
+        if search_web:
+            from google.genai import types
+            config = types.GenerateContentConfig(
+                tools=[{"google_search": {}}]
+            )
+
         response = gemini_client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=full_prompt
+            contents=full_prompt,
+            config=config
         )
         return response.text.strip()
     else:

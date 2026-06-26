@@ -186,6 +186,7 @@ export const aiService = {
       searchWeb?: boolean;
       languageCode?: string;
       persona?: string;
+      pageContent?: string;
     } = {}
   ): Promise<TutorChatResponse> {
     return apiFetch<TutorChatResponse>("/api/tutor/chat", {
@@ -197,6 +198,7 @@ export const aiService = {
         search_web: options.searchWeb ?? false,
         language_code: options.languageCode ?? "en",
         persona: options.persona ?? "university",
+        page_content: options.pageContent ?? null,
       }),
     });
   },
@@ -209,6 +211,7 @@ export const aiService = {
       searchWeb?: boolean;
       languageCode?: string;
       persona?: string;
+      pageContent?: string;
     } = {}
   ): AsyncGenerator<string, { session_id: string; history: TutorChatResponse["history"] }, unknown> {
     const data = await apiFetch<TutorChatResponse>("/api/tutor/chat", {
@@ -220,6 +223,7 @@ export const aiService = {
         search_web: options.searchWeb ?? false,
         language_code: options.languageCode ?? "en",
         persona: options.persona ?? "university",
+        page_content: options.pageContent ?? null,
       }),
     });
 

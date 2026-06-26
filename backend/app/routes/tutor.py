@@ -16,6 +16,7 @@ class ChatRequest(BaseModel):
     search_web: bool = False
     language_code: str = "en"
     persona: str = "university"
+    page_content: str | None = None
 
 @router.post("/chat")
 async def tutor_chat(
@@ -67,7 +68,8 @@ async def tutor_chat(
         document_summary=doc_data["summary"],
         search_web=body.search_web,
         output_language_code=body.language_code,
-        persona=body.persona
+        persona=body.persona,
+        page_content=body.page_content
     )
 
     conversation_history.append({"role": "user", "content": body.message})

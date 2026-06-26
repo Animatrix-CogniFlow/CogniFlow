@@ -1,6 +1,6 @@
 import { useState, useRef, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, MessageCircle } from "lucide-react";
+import { X, Send, MessageCircle, Globe } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { cn } from "../../lib/utils";
 import { aiService } from "../../services/aiService";
@@ -16,6 +16,7 @@ export function FloatingTutor({ persona, documentId }: FloatingTutorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [language, setLanguage] = useState("en");
+  const [searchWeb, setSearchWeb] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const constraintsRef = useRef(null);
@@ -90,11 +91,18 @@ export function FloatingTutor({ persona, documentId }: FloatingTutorProps) {
       { role: "assistant", text: "..." },
     ]);
 
+    // Extract current page content from DOM dynamically
+    const mainEl = document.querySelector("main");
+    const rawText = mainEl ? (mainEl.innerText || mainEl.textContent || "") : "";
+    const pageContent = rawText.replace(/\s+/g, " ").trim().substring(0, 4000);
+
     try {
       const response = await aiService.tutorChat(documentId, userText, {
         sessionId,
         languageCode: language,
         persona: persona ?? "university",
+        searchWeb,
+        pageContent,
       });
 
       // Save session_id from backend (uses underscore not camelCase)
@@ -230,6 +238,21 @@ export function FloatingTutor({ persona, documentId }: FloatingTutorProps) {
                 onSubmit={handleSendMessage}
                 className="border-t border-silver-200 bg-white p-3 dark:border-white/10 dark:bg-abyss-950"
               >
+                <div className="flex items-center justify-between mb-2 px-1">
+                  <button
+                    type="button"
+                    onClick={() => setSearchWeb(!searchWeb)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all border shadow-sm cursor-pointer",
+                      searchWeb 
+                        ? "bg-gold-500/10 border-gold-500/30 text-gold-700 dark:text-gold-400" 
+                        : "bg-silver-50 border-silver-200 text-silver-500 hover:bg-silver-100 dark:bg-abyss-900 dark:border-white/5 dark:text-silver-400 dark:hover:bg-white/5"
+                    )}
+                  >
+                    <Globe className={cn("h-3.5 w-3.5", searchWeb && "animate-pulse")} />
+                    <span>Web Research {searchWeb ? "ON" : "OFF"}</span>
+                  </button>
+                </div>
                 <div className="relative flex items-center gap-2">
                   <input
                     type="text"
