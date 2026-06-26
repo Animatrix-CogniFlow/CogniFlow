@@ -4,9 +4,22 @@ from app.core.config import settings
 from app.agents.language_agent import get_language_instruction
 from app.agents.persona_agent import get_persona_instruction
 from app.agents.gemini_utils import generate_content_with_fallback
-import json, re, base64
+import json, re, base64, io
+from pypdf import PdfReader
 
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
+
+def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> str:
+    try:
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        text = ""
+        for page in reader.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
+        return text.strip()
+    except Exception:
+        return ""
 
 async def extract_content_from_pdf(file_b64: str, filename: str, output_language_code: str = "en", persona: str = "university") -> dict:
     language_instruction = get_language_instruction(output_language_code)
@@ -38,14 +51,27 @@ async def extract_content_from_pdf(file_b64: str, filename: str, output_language
     - Return only valid JSON. No extra text.
     """
 
-    response = generate_content_with_fallback(
-        client=client,
-        model="gemini-2.5-flash",
-        contents=[
-            types.Part.from_bytes(data=base64.b64decode(file_b64), mime_type="application/pdf"),
-            types.Part.from_text(text=prompt)
-        ]
-    )
+    pdf_bytes = base64.b64decode(file_b64)
+    extracted_text = extract_text_from_pdf_bytes(pdf_bytes)
+
+    if extracted_text:
+        # Pass the extracted text inline to enable text-only Groq fallback
+        truncated_text = extracted_text[:20000]
+        prompt_with_text = prompt + f"\n\nHere is the extracted text from the PDF:\n{truncated_text}"
+        response = generate_content_with_fallback(
+            client=client,
+            model="gemini-2.5-flash",
+            contents=prompt_with_text
+        )
+    else:
+        response = generate_content_with_fallback(
+            client=client,
+            model="gemini-2.5-flash",
+            contents=[
+                types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
+                types.Part.from_text(text=prompt)
+            ]
+        )
 
     raw = response.text.strip()
     raw = re.sub(r"^```json|^```|```$", "", raw, flags=re.MULTILINE).strip()
@@ -86,14 +112,26 @@ async def extract_concepts_for_topic(file_b64: str, filename: str, topic_name: s
     - Return only valid JSON. No extra text.
     """
 
-    response = generate_content_with_fallback(
-        client=client,
-        model="gemini-2.5-flash",
-        contents=[
-            types.Part.from_bytes(data=base64.b64decode(file_b64), mime_type="application/pdf"),
-            types.Part.from_text(text=prompt)
-        ]
-    )
+    pdf_bytes = base64.b64decode(file_b64)
+    extracted_text = extract_text_from_pdf_bytes(pdf_bytes)
+
+    if extracted_text:
+        truncated_text = extracted_text[:20000]
+        prompt_with_text = prompt + f"\n\nHere is the extracted text from the PDF:\n{truncated_text}"
+        response = generate_content_with_fallback(
+            client=client,
+            model="gemini-2.5-flash",
+            contents=prompt_with_text
+        )
+    else:
+        response = generate_content_with_fallback(
+            client=client,
+            model="gemini-2.5-flash",
+            contents=[
+                types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
+                types.Part.from_text(text=prompt)
+            ]
+        )
 
     raw = response.text.strip()
     raw = re.sub(r"^```json|^```|```$", "", raw, flags=re.MULTILINE).strip()
