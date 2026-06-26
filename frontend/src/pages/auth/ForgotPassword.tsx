@@ -10,14 +10,27 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!/\S+@\S+\.\S+/.test(email)) return;
     setLoading(true);
-    await authService.resetPassword(email);
-    setLoading(false);
-    setSent(true);
+    setError(null);
+    try {
+      await authService.resetPassword(email);
+      setSent(true);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      const friendly = msg.includes("user-not-found")
+        ? "No account found with this email."
+        : msg.includes("invalid-email")
+        ? "Please enter a valid email address."
+        : "Failed to send reset email. Please try again.";
+      setError(friendly);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -39,6 +52,7 @@ export default function ForgotPassword() {
             icon={<Mail className="h-4 w-4" />}
             onChange={(e) => setEmail(e.target.value)}
           />
+          {error && <p className="text-sm text-rose-500">{error}</p>}
           <Button type="submit" className="w-full" loading={loading}>
             Send reset link
           </Button>

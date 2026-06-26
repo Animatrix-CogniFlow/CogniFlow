@@ -64,22 +64,31 @@ export const authService = {
   async signUp({ email, password, name }: Credentials): Promise<User> {
     const { user } = await createUserWithEmailAndPassword(auth, email, password);
 
-    const displayName = name?.trim() || "New Learner";
-    await firebaseUpdateProfile(user, { displayName });
+    try {
+      const displayName = name?.trim() || "New Learner";
+      await firebaseUpdateProfile(user, { displayName });
 
-    // Send verification email (non-blocking — don't throw if it fails)
-    sendEmailVerification(user).catch(() => {});
+      // Send verification email (non-blocking — don't throw if it fails)
+      sendEmailVerification(user).catch(() => {});
 
-    const profile: User = {
-      id:          user.uid,
-      name:        displayName,
-      email:       user.email!,
-      avatarColor: AVATAR_COLORS[displayName.length % AVATAR_COLORS.length],
-      plan:        "free",
-    };
+      const profile: User = {
+        id:          user.uid,
+        name:        displayName,
+        email:       user.email!,
+        avatarColor: AVATAR_COLORS[displayName.length % AVATAR_COLORS.length],
+        plan:        "free",
+      };
 
-    await setDoc(doc(db, "users", user.uid), profile);
-    return profile;
+      await setDoc(doc(db, "users", user.uid), profile);
+      return profile;
+    } catch (err) {
+      try {
+        await deleteUser(user);
+      } catch (cleanupErr) {
+        console.error("Cleanup failed: Unable to delete user after profile setup error", cleanupErr);
+      }
+      throw err;
+    }
   },
 
   // ── Google sign-in ────────────────────────────────────────

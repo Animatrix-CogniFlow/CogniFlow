@@ -18,6 +18,36 @@ interface AuthState {
   clearError:         () => void;
 }
 
+function getFriendlyErrorMessage(err: unknown, fallback: string): string {
+  if (!(err instanceof Error)) return fallback;
+  const msg = err.message || "";
+  if (msg.includes("email-already-in-use")) {
+    return "An account with this email already exists.";
+  }
+  if (msg.includes("weak-password")) {
+    return "Password is too weak. Use at least 6 characters.";
+  }
+  if (msg.includes("wrong-password") || msg.includes("invalid-credential") || msg.includes("auth/invalid-login-credentials")) {
+    return "Incorrect email or password. Please try again.";
+  }
+  if (msg.includes("user-not-found")) {
+    return "No account found with this email.";
+  }
+  if (msg.includes("user-disabled")) {
+    return "This account has been disabled.";
+  }
+  if (msg.includes("invalid-email")) {
+    return "Please enter a valid email address.";
+  }
+  if (msg.includes("popup-closed") || msg.includes("popup-closed-by-user")) {
+    return "Google sign-in was cancelled.";
+  }
+  if (msg.includes("network-request-failed")) {
+    return "Network error. Please check your internet connection.";
+  }
+  return msg || fallback;
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -38,8 +68,8 @@ export const useAuthStore = create<AuthState>()(
             emailVerified: !!authService["_currentFirebaseUser"]?.emailVerified,
           });
           return true;
-        } catch {
-          set({ status: "idle", error: "Unable to sign in. Check your credentials." });
+        } catch (err) {
+          set({ status: "idle", error: getFriendlyErrorMessage(err, "Unable to sign in. Check your credentials.") });
           return false;
         }
       },
@@ -52,11 +82,10 @@ export const useAuthStore = create<AuthState>()(
           return true;
         } catch (err) {
           const msg = err instanceof Error ? err.message : "Google sign-in failed.";
-          // User closed the popup — don't show an error for that
-          if (msg.includes("popup-closed")) {
+          if (msg.includes("popup-closed") || msg.includes("popup-closed-by-user")) {
             set({ status: "idle" });
           } else {
-            set({ status: "idle", error: msg });
+            set({ status: "idle", error: getFriendlyErrorMessage(err, "Google sign-in failed.") });
           }
           return false;
         }
@@ -69,13 +98,7 @@ export const useAuthStore = create<AuthState>()(
           set({ user, status: "authenticated", emailVerified: false });
           return true;
         } catch (err) {
-          const msg = err instanceof Error ? err.message : "";
-          const friendly = msg.includes("email-already-in-use")
-            ? "An account with this email already exists."
-            : msg.includes("weak-password")
-            ? "Password is too weak. Use at least 6 characters."
-            : "Unable to create account. Please try again.";
-          set({ status: "idle", error: friendly });
+          set({ status: "idle", error: getFriendlyErrorMessage(err, "Unable to create account. Please try again.") });
           return false;
         }
       },

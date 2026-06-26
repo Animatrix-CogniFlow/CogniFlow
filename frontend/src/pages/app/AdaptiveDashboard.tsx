@@ -14,6 +14,7 @@ const API = (import.meta.env.VITE_API_URL as string) || "";
 export default function AdaptiveDashboard() {
   const [persona, setPersona] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const db = getFirestore();
   const auth = getAuth();
 
@@ -46,17 +47,14 @@ export default function AdaptiveDashboard() {
 
   async function handleSelectPersona(selectedPersona: string) {
     setLoading(true);
+    setError(null);
     const user = auth.currentUser;
     if (!user) return;
 
     try {
-      // 1. Save to Firestore users collection for fast local reads
-      const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { persona: selectedPersona });
-
-      // 2. Also tell the backend so every agent uses the right persona
+      // 1. Tell the backend first so every agent uses the right persona
       const token = await user.getIdToken();
-      await fetch(`${API}/api/profile/persona`, {
+      const res = await fetch(`${API}/api/profile/persona`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -65,9 +63,18 @@ export default function AdaptiveDashboard() {
         body: JSON.stringify({ persona: selectedPersona }),
       });
 
+      if (!res.ok) {
+        throw new Error("Backend synchronization failed.");
+      }
+
+      // 2. Save to Firestore users collection for fast local reads
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, { persona: selectedPersona });
+
       setPersona(selectedPersona);
     } catch (err) {
       console.error("Error saving persona:", err);
+      setError("Failed to save your learning profile. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -85,7 +92,16 @@ export default function AdaptiveDashboard() {
   }
 
   if (!persona) {
-    return <OnboardingPersonaSelection onSelect={handleSelectPersona} />;
+    return (
+      <div className="relative">
+        {error && (
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 bg-rose-600/90 text-white px-6 py-3 rounded-2xl text-sm font-semibold shadow-2xl backdrop-blur-md border border-rose-500/30">
+            {error}
+          </div>
+        )}
+        <OnboardingPersonaSelection onSelect={handleSelectPersona} />
+      </div>
+    );
   }
 
   switch (persona) {
