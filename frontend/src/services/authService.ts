@@ -102,9 +102,22 @@ export const authService = {
   // ── Profile update ────────────────────────────────────────
   async updateProfile(updated: User): Promise<void> {
     const { id, ...fields } = updated;
-    await updateDoc(doc(db, "users", id), fields);
-    if (auth.currentUser && fields.name) {
-      await firebaseUpdateProfile(auth.currentUser, { displayName: fields.name });
+    // Firestore does not support 'undefined' values, filter them out.
+    const cleanFields = Object.entries(fields).reduce((acc, [key, val]) => {
+      if (val !== undefined) {
+        acc[key] = val;
+      }
+      return acc;
+    }, {} as Record<string, any>);
+
+    try {
+      await updateDoc(doc(db, "users", id), cleanFields);
+      if (auth.currentUser && fields.name) {
+        await firebaseUpdateProfile(auth.currentUser, { displayName: fields.name });
+      }
+    } catch (err) {
+      console.error("Firestore updateProfile error:", err);
+      throw err;
     }
   },
 

@@ -61,6 +61,7 @@ async def start_oral_exam(
         "questions": questions,
         "answers": [],
         "current_question": 0,
+        "current_try": 0,
         "completed": False,
         "created_at": datetime.datetime.utcnow().isoformat()
     })
@@ -101,6 +102,7 @@ async def submit_oral_answer(
     if exam_data["completed"]:
         raise HTTPException(status_code=400, detail="This exam is already completed")
 
+    current_try = exam_data.get("current_try", 0)
     current_index = exam_data["current_question"]
     questions = exam_data["questions"]
     current_question = questions[current_index]
@@ -119,22 +121,35 @@ async def submit_oral_answer(
         persona=persona
     )
 
-    answer_record = {
-        "question_id": current_question["id"],
-        "question": current_question["question"],
-        "transcription": transcription,
-        "evaluation": evaluation
-    }
+    is_correct = evaluation.get("is_correct", False)
+    if not isinstance(is_correct, bool):
+        is_correct = evaluation.get("score", 0) >= 7
+
+    try_num = current_try + 1
+    should_advance = is_correct or try_num >= 3
 
     answers = exam_data.get("answers", [])
-    answers.append(answer_record)
 
-    next_index = current_index + 1
-    is_last = next_index >= len(questions)
+    if should_advance:
+        answer_record = {
+            "question_id": current_question["id"],
+            "question": current_question["question"],
+            "transcription": transcription,
+            "evaluation": evaluation
+        }
+        answers.append(answer_record)
+        next_index = current_index + 1
+        is_last = next_index >= len(questions)
+        next_try = 0
+    else:
+        next_index = current_index
+        is_last = False
+        next_try = try_num
 
     exam_ref.update({
         "answers": answers,
         "current_question": next_index,
+        "current_try": next_try,
         "completed": is_last,
         "completed_at": datetime.datetime.utcnow().isoformat() if is_last else None
     })
@@ -142,12 +157,15 @@ async def submit_oral_answer(
     response = {
         "transcription": transcription,
         "evaluation": evaluation,
+        "is_correct": is_correct,
+        "current_try": try_num,
+        "max_tries": 3,
         "is_complete": is_last
     }
 
-    if not is_last:
+    if should_advance and not is_last:
         response["next_question"] = questions[next_index]
-    else:
+    elif is_last:
         total_score = sum(a["evaluation"]["score"] for a in answers)
         avg_score = round(total_score / len(answers), 1)
 

@@ -45,14 +45,20 @@ async def create_flashcards(
     if data["user_id"] != user["uid"]:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    flashcards = await generate_flashcards(
-        raw_text=data["raw_text"],
-        subject=data["subject"],
-        count=count,
-        mode=mode,
-        output_language_code=language_code,
-        persona=persona
-    )
+    try:
+        flashcards = await generate_flashcards(
+            raw_text=data["raw_text"],
+            subject=data["subject"],
+            count=count,
+            mode=mode,
+            output_language_code=language_code,
+            persona=persona
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate flashcards: {str(e)}"
+        )
 
     flashcard_ref = db.collection("flashcards").document()
     flashcard_ref.set({

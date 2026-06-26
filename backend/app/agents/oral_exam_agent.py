@@ -114,8 +114,11 @@ async def evaluate_oral_answer(
     Evaluate the answer and return a JSON object:
     {{
         "score": a number from 0 to 10,
+        "is_correct": true if the score is 7 or above and the student demonstrated sufficient understanding of the core concepts, false otherwise,
         "understanding": "poor | fair | good | excellent",
         "feedback": "feedback written in the tone appropriate for this persona",
+        "clue": "if not correct, a constructive, supportive hint/clue that guides the student's thinking towards the right answer without giving it away. If correct, this can be empty.",
+        "correct_answer": "a concise, complete model answer in the target language that covers all the key points perfectly",
         "covered": ["key points the student mentioned"],
         "missed": ["key points the student did not mention"]
     }}

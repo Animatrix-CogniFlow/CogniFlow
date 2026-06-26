@@ -65,11 +65,17 @@ export interface OralAnswerResponse {
   transcription: string;
   evaluation: {
     score: number;
+    is_correct: boolean;
     understanding: string;
     feedback: string;
+    clue?: string;
+    correct_answer?: string;
     covered: string[];
     missed: string[];
   };
+  is_correct: boolean;
+  current_try: number;
+  max_tries: number;
   is_complete: boolean;
   next_question?: OralQuestion;
   overall_score?: number;
@@ -214,8 +220,13 @@ export const aiService = {
       pageContent?: string;
     } = {}
   ): AsyncGenerator<string, { session_id: string; history: TutorChatResponse["history"] }, unknown> {
-    const data = await apiFetch<TutorChatResponse>("/api/tutor/chat", {
+    const token = await getIdToken();
+    const res = await fetch(`${API}/api/tutor/chat/stream`, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({
         document_id: documentId,
         message,
@@ -227,13 +238,66 @@ export const aiService = {
       }),
     });
 
-    const tokens = data.reply.split(/(\s+)/);
-    for (const token of tokens) {
-      await new Promise((r) => setTimeout(r, 18 + Math.random() * 30));
-      yield token;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail ?? "Request failed");
     }
 
-    return { session_id: data.session_id, history: data.history };
+    if (!res.body) {
+      throw new Error("No response body");
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let sessionId = "";
+    const history: TutorChatResponse["history"] = [];
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const parsed = JSON.parse(line);
+          if (parsed.error) {
+            throw new Error(parsed.error);
+          }
+          if (parsed.session_id) {
+            sessionId = parsed.session_id;
+          }
+          if (parsed.token) {
+            yield parsed.token;
+          }
+        } catch (e) {
+          console.error("Failed to parse stream line:", e);
+        }
+      }
+    }
+
+    if (buffer.trim()) {
+      try {
+        const parsed = JSON.parse(buffer);
+        if (parsed.error) {
+          throw new Error(parsed.error);
+        }
+        if (parsed.session_id) {
+          sessionId = parsed.session_id;
+        }
+        if (parsed.token) {
+          yield parsed.token;
+        }
+      } catch (e) {
+        console.error("Failed to parse remaining stream buffer:", e);
+      }
+    }
+
+    return { session_id: sessionId, history };
   },
 
   async getTutorSessions(documentId: string): Promise<TutorSession[]> {
@@ -258,7 +322,8 @@ export const aiService = {
       persona: options.persona ?? "university",
     });
     return apiFetch<OralExamStartResponse>(
-      `/api/oral-exam/start/${documentId}?${params}`
+      `/api/oral-exam/start/${documentId}?${params}`,
+      { method: "POST" }
     );
   },
 

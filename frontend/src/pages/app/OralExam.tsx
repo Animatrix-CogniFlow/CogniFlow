@@ -16,7 +16,8 @@ import type {
   OralQuestion,
 } from "../../services/aiService";
 import { useChatStore } from "../../stores/useChatStore";
-import { cn } from "../../lib/utils";
+import { cn, uid } from "../../lib/utils";
+import type { TranscriptEntry } from "../../lib/types";
 
 // ── Stage machine ────────────────────────────────────────────
 type Stage =
@@ -48,6 +49,13 @@ export default function OralExam() {
   const [lastEval, setLastEval] = useState<OralAnswerResponse["evaluation"] | null>(null);
   const [results, setResults] = useState<OralExamResults | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // --- Tries / Correctness state ---
+  const [currentTry, setCurrentTry] = useState(1);
+  const [maxTries, setMaxTries] = useState(3);
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [nextQ, setNextQ] = useState<OralQuestion | null>(null);
+  const [isCompleteResponse, setIsCompleteResponse] = useState(false);
 
   // ── Recording ──
   const mediaRef = useRef<MediaRecorder | null>(null);
@@ -140,26 +148,17 @@ export default function OralExam() {
       ]);
 
       setLastEval(res.evaluation);
-
-      if (res.is_complete) {
-        // Fetch full results
-        const fullResults = await aiService.getOralExamResults(examId);
-        setResults(fullResults);
-        setStage("complete");
-      } else if (res.next_question) {
-        setStage("between");
-        // next question ready when user clicks Continue
-        setTimeout(() => {
-          setQuestion(res.next_question!);
-          setTranscript((prev) => [
-            ...prev,
-            { id: uid("t"), speaker: "examiner", text: res.next_question!.question },
-          ]);
-          setQIndex((i) => i + 1);
-          setLastEval(null);
-          setStage("ready");
-        }, 2800);
+      setCurrentTry(res.current_try);
+      setMaxTries(res.max_tries);
+      setIsCorrect(res.is_correct);
+      setIsCompleteResponse(res.is_complete);
+      if (res.next_question) {
+        setNextQ(res.next_question);
+      } else {
+        setNextQ(null);
       }
+
+      setStage("between");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit answer.");
       setStage("ready");
@@ -176,6 +175,43 @@ export default function OralExam() {
     setResults(null);
     setError(null);
     setQIndex(0);
+    setCurrentTry(1);
+    setIsCorrect(false);
+    setNextQ(null);
+    setIsCompleteResponse(false);
+  }
+
+  async function handleContinue() {
+    if (isCompleteResponse) {
+      if (!examId) return;
+      setStage("analyzing");
+      try {
+        const fullResults = await aiService.getOralExamResults(examId);
+        setResults(fullResults);
+        setStage("complete");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load results.");
+        setStage("between");
+      }
+    } else if (nextQ) {
+      setQuestion(nextQ);
+      setTranscript((prev) => [
+        ...prev,
+        { id: uid("t"), speaker: "examiner", text: nextQ.question },
+      ]);
+      setQIndex((i) => i + 1);
+      setLastEval(null);
+      setNextQ(null);
+      setCurrentTry(1);
+      setIsCorrect(false);
+      setIsCompleteResponse(false);
+      setStage("ready");
+    }
+  }
+
+  function handleTryAgain() {
+    setLastEval(null);
+    setStage("ready");
   }
 
   const selectedDoc = documents.find((d) => d.id === selectedDocId);
@@ -348,7 +384,7 @@ export default function OralExam() {
 
               <div className="relative mt-8 max-w-md text-center">
                 <p className="text-xs font-medium uppercase tracking-wider text-gold-400 dark:text-cobalt-300">
-                  Topic {qIndex + 1} of {totalQ}
+                  Topic {qIndex + 1} of {totalQ} {stage === "between" && `(Attempt ${currentTry} of ${maxTries})`}
                 </p>
                 <p className="mt-2 text-lg text-white leading-relaxed">
                   {question?.question}
@@ -362,24 +398,44 @@ export default function OralExam() {
 
               <Waveform active={stage === "recording"} />
 
-              <Button
-                size="lg"
-                className="relative mt-8"
-                variant={stage === "recording" ? "danger" : "primary"}
-                onClick={stage === "recording" ? stopAndSubmit : startRecording}
-                loading={stage === "analyzing" || stage === "between"}
-                disabled={stage === "analyzing" || stage === "between"}
-              >
-                {stage === "recording" ? (
-                  <><MicOff className="h-5 w-5" /> Stop & Answer</>
-                ) : stage === "analyzing" ? (
-                  <><Loader2 className="h-5 w-5 animate-spin" /> Listening…</>
-                ) : stage === "between" ? (
-                  <><CheckCircle2 className="h-5 w-5" /> Moving on…</>
+              {stage === "between" ? (
+                isCorrect || currentTry >= maxTries ? (
+                  <Button
+                    size="lg"
+                    className="relative mt-8"
+                    variant="primary"
+                    onClick={handleContinue}
+                  >
+                    <CheckCircle2 className="h-5 w-5" /> Continue
+                  </Button>
                 ) : (
-                  <><Mic className="h-5 w-5" /> Record Answer</>
-                )}
-              </Button>
+                  <Button
+                    size="lg"
+                    className="relative mt-8"
+                    variant="secondary"
+                    onClick={handleTryAgain}
+                  >
+                    <RotateCcw className="h-5 w-5" /> Try Again (Attempt {currentTry} of {maxTries} used)
+                  </Button>
+                )
+              ) : (
+                <Button
+                  size="lg"
+                  className="relative mt-8"
+                  variant={stage === "recording" ? "danger" : "primary"}
+                  onClick={stage === "recording" ? stopAndSubmit : startRecording}
+                  loading={stage === "analyzing"}
+                  disabled={stage === "analyzing"}
+                >
+                  {stage === "recording" ? (
+                    <><MicOff className="h-5 w-5" /> Stop & Answer</>
+                  ) : stage === "analyzing" ? (
+                    <><Loader2 className="h-5 w-5 animate-spin" /> Listening…</>
+                  ) : (
+                    <><Mic className="h-5 w-5" /> Record Answer</>
+                  )}
+                </Button>
+              )}
 
               <button
                 onClick={reset}
@@ -433,6 +489,18 @@ export default function OralExam() {
                   <h3 className="font-display font-semibold tracking-tight">
                     Feedback
                   </h3>
+                  {lastEval && (
+                    <span
+                      className={cn(
+                        "ml-auto rounded-full px-2 py-0.5 text-xs font-semibold",
+                        isCorrect
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                      )}
+                    >
+                      {isCorrect ? "Correct" : `Incorrect (Try ${currentTry}/${maxTries})`}
+                    </span>
+                  )}
                 </div>
                 {lastEval ? (
                   <div className="space-y-4">
@@ -440,13 +508,36 @@ export default function OralExam() {
                     <p className="text-sm text-silver-700 dark:text-cobalt-200">
                       {lastEval.feedback}
                     </p>
-                    {lastEval.missed_points.length > 0 && (
+
+                    {!isCorrect && currentTry < maxTries && lastEval.clue && (
+                      <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3.5 dark:border-amber-900/30 dark:bg-amber-900/10">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                          Clue
+                        </p>
+                        <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
+                          {lastEval.clue}
+                        </p>
+                      </div>
+                    )}
+
+                    {!isCorrect && currentTry >= maxTries && lastEval.correct_answer && (
+                      <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-3.5 dark:border-blue-900/30 dark:bg-blue-900/10">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                          Model Answer
+                        </p>
+                        <p className="mt-1 text-sm text-blue-800 dark:text-blue-300">
+                          {lastEval.correct_answer}
+                        </p>
+                      </div>
+                    )}
+
+                    {lastEval.missed && lastEval.missed.length > 0 && (
                       <div>
                         <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-silver-500 dark:text-cobalt-400/60">
                           Suggestions for improvement
                         </p>
                         <ul className="space-y-1">
-                          {lastEval.missed_points.map((p, i) => (
+                          {lastEval.missed.map((p, i) => (
                             <li key={i} className="flex items-start gap-2 text-sm text-silver-600 dark:text-cobalt-300">
                               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
                               {p}
