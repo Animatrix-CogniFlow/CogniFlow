@@ -1,13 +1,21 @@
 import { Fragment } from "react";
+import { MathRenderer } from "./MathRenderer";
 
 /**
  * Lightweight markdown renderer (no deps) for the AI tutor.
  * Handles: code fences, headings, bold, inline code, bullet lists,
- * and numbered lists.
+ * numbered lists, and LaTeX mathematical symbols.
  */
 export function MarkdownLite({ text }: { text: string }) {
+  // Pre-process LaTeX delimiters: convert \[...\] to $$...$$ and \(...\) to $...$
+  const processedText = text
+    .replace(/\\\[/g, "$$")
+    .replace(/\\\]/g, "$$")
+    .replace(/\\\(/g, "$")
+    .replace(/\\\)/g, "$");
+
   // Split on ``` fences — odd-indexed blocks are code
-  const blocks = text.split(/```/);
+  const blocks = processedText.split(/```/);
 
   return (
     <div className="space-y-3 text-sm leading-relaxed">
@@ -31,35 +39,55 @@ export function MarkdownLite({ text }: { text: string }) {
 }
 
 function renderProse(text: string) {
-  const lines = text.split("\n").filter((l) => l.trim() !== "");
-  return lines.map((line, i) => {
-    // Numbered list item
-    if (/^\d+\.\s/.test(line)) {
+  // Split on block math: $$...$$
+  const blocks = text.split(/(\$\$.*?\$\$)/gs);
+  return blocks.map((chunk, index) => {
+    const isBlockMath = chunk.startsWith("$$") && chunk.endsWith("$$");
+    if (isBlockMath) {
+      const mathContent = chunk.slice(2, -2).trim();
       return (
-        <p key={i} className="pl-1">
-          <span className="font-medium text-gold-600 dark:text-cobalt-400">
-            {line.match(/^\d+\./)?.[0]}
-          </span>{" "}
-          {inline(line.replace(/^\d+\.\s/, ""))}
-        </p>
+        <div key={index} className="my-3 overflow-x-auto text-center">
+          <MathRenderer math={mathContent} block={true} />
+        </div>
       );
     }
-    // Bullet list item
-    if (/^[-*]\s/.test(line)) {
-      return (
-        <p key={i} className="flex gap-2 pl-1">
-          <span className="text-gold-500 dark:text-cobalt-400">•</span>
-          <span>{inline(line.replace(/^[-*]\s/, ""))}</span>
-        </p>
-      );
-    }
-    return <p key={i}>{inline(line)}</p>;
+
+    // Split on lines for normal prose, list rendering
+    const lines = chunk.split("\n").filter((l) => l.trim() !== "");
+    return lines.map((line, i) => {
+      // Numbered list item
+      if (/^\d+\.\s/.test(line)) {
+        return (
+          <p key={`${index}-${i}`} className="pl-1">
+            <span className="font-medium text-gold-600 dark:text-cobalt-400">
+              {line.match(/^\d+\./)?.[0]}
+            </span>{" "}
+            {inline(line.replace(/^\d+\.\s/, ""))}
+          </p>
+        );
+      }
+      // Bullet list item
+      if (/^[-*]\s/.test(line)) {
+        return (
+          <p key={`${index}-${i}`} className="flex gap-2 pl-1">
+            <span className="text-gold-500 dark:text-cobalt-400">•</span>
+            <span>{inline(line.replace(/^[-*]\s/, ""))}</span>
+          </p>
+        );
+      }
+      return <p key={`${index}-${i}`}>{inline(line)}</p>;
+    });
   });
 }
 
 function inline(line: string) {
-  const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  // Split on inline math ($...$), bold (**...**), and inline code (`...`)
+  const parts = line.split(/(\$[^\$]+\$|\*\*[^*]+\*\*|`[^`]+`)/g);
   return parts.map((p, i) => {
+    if (p.startsWith("$") && p.endsWith("$")) {
+      const mathContent = p.slice(1, -1);
+      return <MathRenderer key={i} math={mathContent} block={false} />;
+    }
     if (p.startsWith("**") && p.endsWith("**")) {
       return <strong key={i} className="font-semibold">{p.slice(2, -2)}</strong>;
     }

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Mic, MicOff, Sparkles, FileText, ChevronDown,
   AlertCircle, Loader2, CheckCircle2, RotateCcw,
+  Volume2, VolumeX,
 } from "lucide-react";
 import { PageContainer } from "../../components/shell/PageContainer";
 import { Card, CardBody } from "../../components/ui/Card";
@@ -18,6 +19,7 @@ import type {
 import { useChatStore } from "../../stores/useChatStore";
 import { cn, uid } from "../../lib/utils";
 import type { TranscriptEntry } from "../../lib/types";
+import { MarkdownLite } from "../../components/tutor/MarkdownLite";
 
 // ── Stage machine ────────────────────────────────────────────
 type Stage =
@@ -35,6 +37,8 @@ export default function OralExam() {
   const selectDocument = useChatStore((s) => s.selectDocument);
   const docsLoading = useChatStore((s) => s.documentsLoading);
   const loadDocuments = useChatStore((s) => s.loadDocuments);
+  const persona = useChatStore((s) => s.persona);
+  const languageCode = useChatStore((s) => s.languageCode);
   
   const [docDropOpen, setDocDropOpen] = useState(false);
   const docDropRef = useRef<HTMLDivElement>(null);
@@ -57,9 +61,28 @@ export default function OralExam() {
   const [nextQ, setNextQ] = useState<OralQuestion | null>(null);
   const [isCompleteResponse, setIsCompleteResponse] = useState(false);
 
+  // --- Text-to-Speech state ---
+  const [readAloud, setReadAloud] = useState(true);
+
   // ── Recording ──
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+
+  // Helper to read text aloud using native Web Speech API
+  const speak = (text: string, force = false) => {
+    if (!readAloud && !force) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = languageCode || "en";
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Clean up synthesis on unmount
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
 
   // ── Load documents on mount ──
   useEffect(() => {
@@ -89,7 +112,7 @@ export default function OralExam() {
     try {
       const res: OralExamStartResponse = await aiService.startOralExam(
         selectedDocId,
-        { count: totalQ, languageCode: "en" }
+        { count: totalQ, languageCode, persona }
       );
       setExamId(res.exam_id);
       setTotalQ(res.total_questions);
@@ -98,6 +121,7 @@ export default function OralExam() {
         { id: uid("t"), speaker: "examiner", text: res.first_question.question },
       ]);
       setStage("ready");
+      speak(res.first_question.question);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start exam.");
       setStage("select");
@@ -106,6 +130,7 @@ export default function OralExam() {
 
   // ── Recording controls ──────────────────────────────────────
   async function startRecording() {
+    window.speechSynthesis.cancel();
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -159,6 +184,17 @@ export default function OralExam() {
       }
 
       setStage("between");
+
+      // Auto-speak details of feedback
+      if (res.is_correct) {
+        speak("Correct!");
+      } else {
+        if (res.current_try < res.max_tries && res.evaluation.clue) {
+          speak(`Incorrect. Hint: ${res.evaluation.clue}`);
+        } else if (res.current_try >= res.max_tries && res.evaluation.correct_answer) {
+          speak(`Incorrect. The correct answer is: ${res.evaluation.correct_answer}`);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit answer.");
       setStage("ready");
@@ -167,6 +203,7 @@ export default function OralExam() {
 
   // ── Reset ───────────────────────────────────────────────────
   function reset() {
+    window.speechSynthesis.cancel();
     setStage("select");
     setExamId(null);
     setQuestion(null);
@@ -182,6 +219,7 @@ export default function OralExam() {
   }
 
   async function handleContinue() {
+    window.speechSynthesis.cancel();
     if (isCompleteResponse) {
       if (!examId) return;
       setStage("analyzing");
@@ -206,10 +244,12 @@ export default function OralExam() {
       setIsCorrect(false);
       setIsCompleteResponse(false);
       setStage("ready");
+      speak(nextQ.question);
     }
   }
 
   function handleTryAgain() {
+    window.speechSynthesis.cancel();
     setLastEval(null);
     setStage("ready");
   }
@@ -363,6 +403,25 @@ export default function OralExam() {
               <div className="absolute inset-0 cf-grid-bg opacity-25" />
               <div className="absolute left-1/2 top-1/3 h-72 w-72 -translate-x-1/2 rounded-full bg-gold-500/20 blur-3xl" />
 
+              {/* Speech control */}
+              <div className="absolute right-6 top-6 z-10">
+                <button
+                  onClick={() => {
+                    const nextVal = !readAloud;
+                    setReadAloud(nextVal);
+                    if (!nextVal) {
+                      window.speechSynthesis.cancel();
+                    } else if (question) {
+                      speak(question.question);
+                    }
+                  }}
+                  className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+                  title={readAloud ? "Disable read aloud" : "Enable read aloud"}
+                >
+                  {readAloud ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                </button>
+              </div>
+
               {/* Progress indicator */}
               <div className="relative flex items-center gap-1.5">
                 {Array.from({ length: totalQ }).map((_, i) => (
@@ -386,9 +445,20 @@ export default function OralExam() {
                 <p className="text-xs font-medium uppercase tracking-wider text-gold-400 dark:text-cobalt-300">
                   Topic {qIndex + 1} of {totalQ} {stage === "between" && `(Attempt ${currentTry} of ${maxTries})`}
                 </p>
-                <p className="mt-2 text-lg text-white leading-relaxed">
-                  {question?.question}
-                </p>
+                <div className="mt-2 flex items-center justify-center gap-2">
+                  <div className="text-lg text-white leading-relaxed flex-1 text-center">
+                    {question?.question && <MarkdownLite text={question.question} />}
+                  </div>
+                  {question?.question && (
+                    <button
+                      onClick={() => speak(question.question, true)}
+                      className="rounded-full bg-white/5 p-1.5 text-gold-400 hover:bg-white/15 dark:text-cobalt-300 transition-colors shrink-0"
+                      title="Read question aloud"
+                    >
+                      <Volume2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
                 {question?.key_points && question.key_points.length > 0 && (
                   <p className="mt-2 text-xs text-white/40">
                     Tip: Try to mention: {question.key_points.slice(0, 2).join(", ")}
@@ -465,16 +535,16 @@ export default function OralExam() {
                         <p className="text-[11px] uppercase tracking-wider text-silver-500 dark:text-cobalt-400/60">
                           {t.speaker === "examiner" ? "Tutor" : "You"}
                         </p>
-                        <p
+                        <div
                           className={cn(
-                            "mt-1 inline-block rounded-2xl px-3.5 py-2 text-sm",
+                            "mt-1 inline-block rounded-2xl px-3.5 py-2 text-sm text-left",
                             t.speaker === "examiner"
-                              ? "bg-silver-200 dark:bg-white/5"
+                              ? "bg-silver-200 dark:bg-white/5 text-silver-950 dark:text-silver-200"
                               : "bg-gold-500 text-white dark:bg-cobalt-600"
                           )}
                         >
-                          {t.text}
-                        </p>
+                          <MarkdownLite text={t.text} />
+                        </div>
                       </motion.div>
                     ))}
                   </AnimatePresence>
@@ -505,29 +575,47 @@ export default function OralExam() {
                 {lastEval ? (
                   <div className="space-y-4">
                     <Metric label="Score" value={lastEval.score * 10} />
-                    <p className="text-sm text-silver-700 dark:text-cobalt-200">
-                      {lastEval.feedback}
-                    </p>
+                    <div className="text-sm text-silver-700 dark:text-cobalt-200 text-left">
+                      <MarkdownLite text={lastEval.feedback} />
+                    </div>
 
                     {!isCorrect && currentTry < maxTries && lastEval.clue && (
                       <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3.5 dark:border-amber-900/30 dark:bg-amber-900/10">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                          Clue
-                        </p>
-                        <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
-                          {lastEval.clue}
-                        </p>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                            Clue
+                          </p>
+                          <button
+                            onClick={() => speak(lastEval.clue!, true)}
+                            className="text-amber-600 hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300 p-0.5"
+                            title="Read clue aloud"
+                          >
+                            <Volume2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <div className="text-sm text-amber-800 dark:text-amber-300 text-left">
+                          <MarkdownLite text={lastEval.clue} />
+                        </div>
                       </div>
                     )}
 
                     {!isCorrect && currentTry >= maxTries && lastEval.correct_answer && (
                       <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-3.5 dark:border-blue-900/30 dark:bg-blue-900/10">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                          Model Answer
-                        </p>
-                        <p className="mt-1 text-sm text-blue-800 dark:text-blue-300">
-                          {lastEval.correct_answer}
-                        </p>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                            Model Answer
+                          </p>
+                          <button
+                            onClick={() => speak(lastEval.correct_answer!, true)}
+                            className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 p-0.5"
+                            title="Read model answer aloud"
+                          >
+                            <Volume2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <div className="text-sm text-blue-800 dark:text-blue-300 text-left">
+                          <MarkdownLite text={lastEval.correct_answer} />
+                        </div>
                       </div>
                     )}
 

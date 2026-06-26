@@ -28,6 +28,7 @@ import { aiService, type Scene, type SceneScript, type AnimationResponse } from 
 import { contentService } from "../../services/contentService";
 import { useChatStore } from "../../stores/useChatStore";
 import { cn } from "../../lib/utils";
+import { MarkdownLite } from "../../components/tutor/MarkdownLite";
 
 export default function VisualLab() {
   const navigate = useNavigate();
@@ -627,9 +628,9 @@ function SceneRenderer({ scene }: { scene: Scene }) {
           <h2 className="font-display text-3xl md:text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-gold-200 to-gold-500">
             {scene.heading || "Concept Exploration"}
           </h2>
-          <p className="text-silver-300 text-base md:text-lg leading-relaxed font-medium">
-            {scene.subheading || "Let's map out the mechanisms and variables in this topic."}
-          </p>
+          <div className="text-silver-300 text-base md:text-lg leading-relaxed font-medium">
+            <MarkdownLite text={scene.subheading || "Let's map out the mechanisms and variables in this topic."} />
+          </div>
         </motion.div>
       );
 
@@ -647,9 +648,9 @@ function SceneRenderer({ scene }: { scene: Scene }) {
           <h3 className="font-display text-2xl font-bold mb-4 text-gold-400 tracking-tight mt-1">
             {scene.term}
           </h3>
-          <p className="text-silver-300 text-base md:text-lg leading-relaxed">
-            {scene.meaning}
-          </p>
+          <div className="text-silver-300 text-base md:text-lg leading-relaxed text-left">
+            <MarkdownLite text={scene.meaning || ""} />
+          </div>
         </motion.div>
       );
 
@@ -673,7 +674,9 @@ function SceneRenderer({ scene }: { scene: Scene }) {
                 <div className="h-5 w-5 shrink-0 rounded-full bg-gold-500/20 flex items-center justify-center mt-0.5">
                   <Check className="h-3.5 w-3.5 text-gold-400" />
                 </div>
-                <p className="text-sm md:text-base text-silver-300 font-medium">{pt}</p>
+                <div className="text-sm md:text-base text-silver-300 font-medium text-left">
+                  <MarkdownLite text={pt} />
+                </div>
               </motion.div>
             ))}
           </div>
@@ -698,7 +701,9 @@ function SceneRenderer({ scene }: { scene: Scene }) {
                   className="bg-gradient-to-br from-gold-500/10 to-gold-600/5 border border-gold-500/25 p-4 rounded-xl text-center shadow-lg min-w-[120px] max-w-[180px]"
                 >
                   <span className="text-xs font-mono font-bold text-gold-500 block mb-1">Step {idx + 1}</span>
-                  <span className="text-sm font-semibold text-white block">{step}</span>
+                  <span className="text-sm font-semibold text-white block">
+                    <MarkdownLite text={step} />
+                  </span>
                 </motion.div>
 
                 {idx < (scene.steps?.length ?? 0) - 1 && (
@@ -738,9 +743,11 @@ function SceneRenderer({ scene }: { scene: Scene }) {
               </h4>
               <ul className="space-y-2">
                 {scene.left?.points.map((p, i) => (
-                  <li key={i} className="text-sm text-silver-300 flex items-start gap-2">
+                  <li key={i} className="text-sm text-silver-300 flex items-start gap-2 text-left">
                     <span className="h-1.5 w-1.5 rounded-full bg-gold-400 mt-2 shrink-0" />
-                    {p}
+                    <div className="flex-1">
+                      <MarkdownLite text={p} />
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -757,9 +764,11 @@ function SceneRenderer({ scene }: { scene: Scene }) {
               </h4>
               <ul className="space-y-2">
                 {scene.right?.points.map((p, i) => (
-                  <li key={i} className="text-sm text-silver-300 flex items-start gap-2">
+                  <li key={i} className="text-sm text-silver-300 flex items-start gap-2 text-left">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 mt-2 shrink-0" />
-                    {p}
+                    <div className="flex-1">
+                      <MarkdownLite text={p} />
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -786,13 +795,13 @@ function SceneRenderer({ scene }: { scene: Scene }) {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ type: "spring", delay: i * 0.1 }}
                 className={cn(
-                  "px-3 py-2 rounded-lg font-mono text-xl font-extrabold shadow-lg",
+                  "px-3 py-2 rounded-lg font-mono text-xl font-extrabold shadow-lg flex items-center justify-center",
                   ["+", "-", "*", "/", "=", "→"].includes(el)
                     ? "text-gold-500 font-bold bg-transparent"
                     : "bg-gold-500 text-abyss-950"
                 )}
               >
-                {el}
+                <MarkdownLite text={el.startsWith("$") ? el : `$${el}$`} />
               </motion.div>
             ))}
           </div>
@@ -818,7 +827,9 @@ function SceneRenderer({ scene }: { scene: Scene }) {
               >
                 <div className="absolute -left-[6px] top-1.5 h-3 w-3 rounded-full bg-gold-500 shadow-md ring-4 ring-gold-500/10" />
                 <h4 className="font-bold text-sm text-gold-400 font-display">{ev.label}</h4>
-                <p className="text-xs text-silver-300 mt-1 leading-relaxed">{ev.description}</p>
+                <div className="text-xs text-silver-300 mt-1 leading-relaxed text-left">
+                  <MarkdownLite text={ev.description} />
+                </div>
               </motion.div>
             ))}
           </div>
@@ -840,11 +851,13 @@ function SceneRenderer({ scene }: { scene: Scene }) {
           </h3>
           <ul className="space-y-3">
             {scene.points?.map((pt, idx) => (
-              <li key={idx} className="text-sm text-silver-300 flex items-start gap-2.5">
+              <li key={idx} className="text-sm text-silver-300 flex items-start gap-2.5 text-left">
                 <div className="h-4 w-4 shrink-0 rounded-full bg-emerald-500/20 flex items-center justify-center mt-0.5 text-emerald-400">
                   ✓
                 </div>
-                <span>{pt}</span>
+                <div className="flex-1">
+                  <MarkdownLite text={pt} />
+                </div>
               </li>
             ))}
           </ul>

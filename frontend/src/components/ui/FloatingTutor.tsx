@@ -4,6 +4,7 @@ import { X, Send, MessageCircle, Globe } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { cn } from "../../lib/utils";
 import { aiService } from "../../services/aiService";
+import { MarkdownLite } from "../tutor/MarkdownLite";
 
 interface FloatingTutorProps {
   persona: string | null;
@@ -226,7 +227,7 @@ export function FloatingTutor({ persona, documentId }: FloatingTutorProps) {
                           <span className="animate-bounce" style={{ animationDelay: "0.2s" }}>•</span>
                         </span>
                       ) : (
-                        msg.text
+                        <MarkdownLite text={msg.text} />
                       )}
                     </div>
                   </div>

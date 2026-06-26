@@ -8,6 +8,7 @@ import { Badge } from "../../components/ui/Badge";
 import { useStudyStore } from "../../stores/useStudyStore";
 import { studyService } from "../../services/studyService";
 import type { ReviewGrade } from "../../lib/types";
+import { MarkdownLite } from "../../components/tutor/MarkdownLite";
 
 const GRADES: { grade: ReviewGrade; label: string; sub: string; cls: string }[] = [
   { grade: "again", label: "Again", sub: "< 1m", cls: "bg-rose-500 hover:bg-rose-400" },
@@ -148,9 +149,9 @@ export default function Review() {
                   <span className="mb-4 text-xs font-medium uppercase tracking-wider text-silver-600">
                     Question
                   </span>
-                  <p className="font-display text-xl font-semibold tracking-tight sm:text-2xl">
-                    {card.front}
-                  </p>
+                  <div className="font-display text-xl font-semibold tracking-tight sm:text-2xl text-center max-w-md">
+                    <MarkdownLite text={card.front} />
+                  </div>
                   <span className="mt-6 inline-flex items-center gap-1.5 text-xs text-silver-600">
                     <RotateCcw className="h-3.5 w-3.5" /> Tap or press space to flip
                   </span>
@@ -163,7 +164,9 @@ export default function Review() {
                   <span className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gold-600">
                     <Sparkles className="h-3.5 w-3.5" /> Answer
                   </span>
-                  <p className="text-lg leading-relaxed sm:text-xl">{card.back}</p>
+                  <div className="text-lg leading-relaxed sm:text-xl text-center max-w-md text-abyss-950 dark:text-silver-200">
+                    <MarkdownLite text={card.back} />
+                  </div>
                 </div>
               </motion.div>
             </div>

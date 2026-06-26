@@ -9,6 +9,7 @@ import { Badge } from "../../components/ui/Badge";
 import { useStudyStore } from "../../stores/useStudyStore";
 import { studyService } from "../../services/studyService";
 import { cn } from "../../lib/utils";
+import { MarkdownLite } from "../../components/tutor/MarkdownLite";
 
 interface LocalQuizQuestion {
   id: string;
@@ -191,9 +192,12 @@ export default function Quiz() {
               return (
                 <Card key={q.id}>
                   <CardBody>
-                    <p className="font-display font-semibold tracking-tight">
-                      <span className="text-gold-600">{qi + 1}.</span> {q.prompt}
-                    </p>
+                    <div className="font-display font-semibold tracking-tight flex items-start gap-1">
+                      <span className="text-gold-600">{qi + 1}.</span>
+                      <div className="flex-1 text-left">
+                        <MarkdownLite text={q.prompt} />
+                      </div>
+                    </div>
                     <div className="mt-4 grid gap-2 sm:grid-cols-2">
                       {q.options.map((opt, oi) => {
                         const isSelected = selected === oi;
@@ -221,7 +225,7 @@ export default function Quiz() {
                               showState && !isCorrect && !isSelected && "border-silver-300 opacity-60 dark:border-abyss-700/60"
                             )}
                           >
-                            <span>{opt}</span>
+                            <span className="flex-1 text-left"><MarkdownLite text={opt} /></span>
                             {showState && isCorrect && <Check className="h-4 w-4 shrink-0 text-emerald-500" />}
                             {showState && isSelected && !isCorrect && <X className="h-4 w-4 shrink-0 text-rose-500" />}
                           </motion.button>
@@ -230,13 +234,13 @@ export default function Quiz() {
                     </div>
 
                     {submitted && (
-                      <motion.p
+                      <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
-                        className="mt-3 rounded-lg bg-silver-200 px-3 py-2 text-sm text-silver-600 dark:bg-white/[0.03] dark:text-silver-600"
+                        className="mt-3 rounded-lg bg-silver-200 px-3 py-2 text-sm text-silver-600 dark:bg-white/[0.03] dark:text-silver-300 text-left"
                       >
-                        {q.explanation}
-                      </motion.p>
+                        <MarkdownLite text={q.explanation} />
+                      </motion.div>
                     )}
                   </CardBody>
                 </Card>

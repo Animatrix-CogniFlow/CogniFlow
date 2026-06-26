@@ -1,6 +1,7 @@
 import openai
 from google import genai
 from google.genai import types
+from groq import Groq
 from app.core.config import settings
 from app.agents.language_agent import get_language_instruction, should_use_gemini
 from app.agents.persona_agent import get_persona_instruction
@@ -9,30 +10,48 @@ import json, re, random, base64
 
 openai.api_key = settings.OPENAI_API_KEY
 gemini_client = genai.Client(api_key=settings.GEMINI_API_KEY)
+groq_client = Groq(api_key=settings.GROQ_API_KEY)
 
 
 async def transcribe_audio(audio_bytes: bytes, filename: str, language_code: str = "en") -> str:
     """
     Transcribes student audio to text.
-    - Weak African languages → Gemini
-    - All other languages → OpenAI Whisper
+    - Weak African languages → Gemini (with Groq fallback)
+    - All other languages → OpenAI Whisper (with Groq fallback)
     """
     if should_use_gemini(language_code):
-        response = generate_content_with_fallback(
-            client=gemini_client,
-            model="gemini-2.5-flash",
-            contents=[
-                types.Part.from_bytes(data=audio_bytes, mime_type="audio/webm"),
-                types.Part.from_text(text="Transcribe this audio exactly as spoken. Return only the transcribed text, nothing else.")
-            ]
-        )
-        return response.text.strip()
+        try:
+            response = generate_content_with_fallback(
+                client=gemini_client,
+                model="gemini-2.5-flash",
+                contents=[
+                    types.Part.from_bytes(data=audio_bytes, mime_type="audio/webm"),
+                    types.Part.from_text(text="Transcribe this audio exactly as spoken. Return only the transcribed text, nothing else.")
+                ]
+            )
+            return response.text.strip()
+        except Exception as e:
+            print(f"Gemini audio transcription failed: {e}. Falling back to Groq Whisper.")
     else:
-        transcript = openai.audio.transcriptions.create(
-            model="whisper-1",
-            file=(filename, audio_bytes, "audio/webm"),
+        try:
+            transcript = openai.audio.transcriptions.create(
+                model="whisper-1",
+                file=(filename, audio_bytes, "audio/webm"),
+            )
+            return transcript.text
+        except Exception as e:
+            print(f"OpenAI audio transcription failed: {e}. Falling back to Groq Whisper.")
+
+    # Fallback to Groq Whisper
+    try:
+        transcript = groq_client.audio.transcriptions.create(
+            model="whisper-large-v3",
+            file=(filename, audio_bytes),
         )
         return transcript.text
+    except Exception as groq_err:
+        print(f"Groq Whisper transcription fallback failed: {groq_err}")
+        raise groq_err
 
 
 async def generate_oral_questions(raw_text: str, subject: str, count: int = 5, output_language_code: str = "en", persona: str = "university") -> list:
