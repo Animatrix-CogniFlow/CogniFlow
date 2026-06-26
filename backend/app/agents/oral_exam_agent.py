@@ -4,6 +4,7 @@ from google.genai import types
 from app.core.config import settings
 from app.agents.language_agent import get_language_instruction, should_use_gemini
 from app.agents.persona_agent import get_persona_instruction
+from app.agents.gemini_utils import generate_content_with_fallback
 import json, re, random, base64
 
 openai.api_key = settings.OPENAI_API_KEY
@@ -17,7 +18,8 @@ async def transcribe_audio(audio_bytes: bytes, filename: str, language_code: str
     - All other languages → OpenAI Whisper
     """
     if should_use_gemini(language_code):
-        response = gemini_client.models.generate_content(
+        response = generate_content_with_fallback(
+            client=gemini_client,
             model="gemini-2.5-flash",
             contents=[
                 types.Part.from_bytes(data=audio_bytes, mime_type="audio/webm"),
@@ -74,7 +76,8 @@ async def generate_oral_questions(raw_text: str, subject: str, count: int = 5, o
     {raw_text}
     """
 
-    response = gemini_client.models.generate_content(
+    response = generate_content_with_fallback(
+        client=gemini_client,
         model="gemini-2.5-flash",
         contents=prompt
     )
@@ -126,7 +129,8 @@ async def evaluate_oral_answer(
     Be encouraging but honest. Write feedback that fits the persona. Return only valid JSON, no extra text.
     """
 
-    response = gemini_client.models.generate_content(
+    response = generate_content_with_fallback(
+        client=gemini_client,
         model="gemini-2.5-flash",
         contents=prompt
     )

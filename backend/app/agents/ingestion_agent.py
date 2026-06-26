@@ -3,6 +3,7 @@ from google.genai import types
 from app.core.config import settings
 from app.agents.language_agent import get_language_instruction
 from app.agents.persona_agent import get_persona_instruction
+from app.agents.gemini_utils import generate_content_with_fallback
 import json, re, base64
 
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
@@ -37,7 +38,8 @@ async def extract_content_from_pdf(file_b64: str, filename: str, output_language
     - Return only valid JSON. No extra text.
     """
 
-    response = client.models.generate_content(
+    response = generate_content_with_fallback(
+        client=client,
         model="gemini-2.5-flash",
         contents=[
             types.Part.from_bytes(data=base64.b64decode(file_b64), mime_type="application/pdf"),
@@ -84,7 +86,8 @@ async def extract_concepts_for_topic(file_b64: str, filename: str, topic_name: s
     - Return only valid JSON. No extra text.
     """
 
-    response = client.models.generate_content(
+    response = generate_content_with_fallback(
+        client=client,
         model="gemini-2.5-flash",
         contents=[
             types.Part.from_bytes(data=base64.b64decode(file_b64), mime_type="application/pdf"),

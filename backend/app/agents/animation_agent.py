@@ -2,6 +2,7 @@ from google import genai
 from app.core.config import settings
 from app.agents.language_agent import get_language_instruction
 from app.agents.persona_agent import get_persona_instruction
+from app.agents.gemini_utils import generate_content_with_fallback
 import json, re
 
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
@@ -85,7 +86,8 @@ async def generate_intro_animation(
     - Return only valid JSON, no extra text
     """
 
-    response = client.models.generate_content(
+    response = generate_content_with_fallback(
+        client=client,
         model="gemini-2.5-flash",
         contents=prompt
     )
@@ -223,7 +225,8 @@ async def generate_concept_animation(
     - Return only valid JSON, no extra text
     """
 
-    response = client.models.generate_content(
+    response = generate_content_with_fallback(
+        client=client,
         model="gemini-2.5-flash",
         contents=prompt
     )
@@ -365,7 +368,8 @@ async def regenerate_concept_animation(
     - Return only valid JSON, no extra text
     """
 
-    response = client.models.generate_content(
+    response = generate_content_with_fallback(
+        client=client,
         model="gemini-2.5-flash",
         contents=prompt
     )

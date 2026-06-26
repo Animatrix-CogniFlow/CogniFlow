@@ -2,6 +2,7 @@ from google import genai
 from app.core.config import settings
 from app.agents.language_agent import get_language_instruction
 from app.agents.persona_agent import get_persona_instruction
+from app.agents.gemini_utils import generate_content_with_fallback
 import json, re, random
 
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
@@ -70,7 +71,8 @@ async def generate_quiz(raw_text: str, subject: str, count: int = 10, difficulty
     {raw_text}
     """
 
-    response = client.models.generate_content(
+    response = generate_content_with_fallback(
+        client=client,
         model="gemini-2.5-flash",
         contents=prompt
     )

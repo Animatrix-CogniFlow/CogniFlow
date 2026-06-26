@@ -3,6 +3,7 @@ from google import genai
 from app.core.config import settings
 from app.agents.language_agent import get_language_instruction, should_use_gemini
 from app.agents.persona_agent import get_persona_instruction
+from app.agents.gemini_utils import generate_content_with_fallback, generate_content_stream_with_fallback
 
 groq_client = Groq(api_key=settings.GROQ_API_KEY)
 gemini_client = genai.Client(api_key=settings.GEMINI_API_KEY)
@@ -74,7 +75,8 @@ The student is currently looking at this active page content on their screen:
                 tools=[{"google_search": {}}]
             )
 
-        response = gemini_client.models.generate_content(
+        response = generate_content_with_fallback(
+            client=gemini_client,
             model="gemini-2.5-flash",
             contents=full_prompt,
             config=config
@@ -159,7 +161,8 @@ The student is currently looking at this active page content on their screen:
                 tools=[{"google_search": {}}]
             )
 
-        response_stream = gemini_client.models.generate_content_stream(
+        response_stream = generate_content_stream_with_fallback(
+            client=gemini_client,
             model="gemini-2.5-flash",
             contents=full_prompt,
             config=config
