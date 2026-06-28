@@ -10,10 +10,10 @@ Developed under the **Animatrix** Organization.
 
 CogniFlow utilizes a decoupled, high-performance architecture built on lightweight, scalable frameworks:
 
-*   **Frontend Ecosystem:** Built with **Next.js** for server-side rendering and optimized SEO, paired with **Framer Motion** to deliver fluid, micro-interactive UI transitions and programmatic animation states during intensive chat modules.
+*   **Frontend Ecosystem:** Built with **React** for server-side rendering and optimized SEO, paired with **Framer Motion** to deliver fluid, micro-interactive UI transitions and programmatic animation states during intensive chat modules.
 *   **Backend Engineering:** Powered by **FastAPI** (Python), chosen for its asynchronous execution capabilities, high-speed data validation, and native compatibility with Python-based AI orchestration libraries.
 *   **Database & Security Layer:** Managed via **Firebase** (Firebase Authentication for secure user lifecycle management; Firestore/Cloud Storage for managing unstructured user profiles and study document repositories).
-*   **AI Engine:** Driven by the **Gemini API**, structured around custom system routing instructions to enforce Socratic methodologies rather than raw text summarization.
+*   **AI Engine:** Driven by the **Gemini API, Groq API, and Whisper API**, structured around custom system routing instructions to enforce Socratic methodologies rather than raw text summarization.
 
 ---
 ## 🎨 UI/UX System Architecture & Design Tokens
